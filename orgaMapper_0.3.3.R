@@ -41,8 +41,10 @@ norm_distance_nucleus = 0.7
 # ==============================================================================
 # where to save the data
 setwd(directory)
-indir = getwd()
-outdir =  getwd()
+input_dir = getwd()
+out_dir =  getwd()
+
+result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
 
 # plot dir
 plots = "plots"
@@ -67,26 +69,33 @@ cell_measure_filter <- subset(cell_measure,
                              Ferets >= feret_lower & Ferets <= feret_upper)
 
 # background subtraction for mean organelle intensity per cell
-cell_measure_filter$MeanOrgaBackSub <- cell_measure_filter$MeanValueOrga - cell_measure_filter$MeanBackgroundOrga
+cell_measure_filter$MeanOrgaBackSub <- 
+  cell_measure_filter$MeanValueOrga - cell_measure_filter$MeanBackgroundOrga
 
 if (cell_column == 10 && orga_column == 10) {
   
-  cell_measure_filter$MeanMeasureBackSub <- cell_measure_filter$MeanValueMeasure - cell_measure_filter$MeanBackgroundMeasure
+  cell_measure_filter$MeanMeasureBackSub <- 
+    cell_measure_filter$MeanValueMeasure - cell_measure_filter$MeanBackgroundMeasure
   
 }
 
-merge_cell_organelle <- merge(cell_measure_filter, organelle_distance, by = c("Name", "Series", "Cell"))
+merge_cell_organelle <- merge(cell_measure_filter, 
+                              organelle_distance, 
+                              by = c("Name", "Series", "Cell"))
 
 # background subtraction for detection intensity
-merge_cell_organelle$PeakDetectBackSub <- merge_cell_organelle$PeakDetectionInt - merge_cell_organelle$MeanBackgroundOrga
+merge_cell_organelle$PeakDetectBackSub <- 
+  merge_cell_organelle$PeakDetectionInt - merge_cell_organelle$MeanBackgroundOrga
 
 if (cell_column == 10 && orga_column == 10) {
   
-  merge_cell_organelle$PeakMeasureBackSub <- merge_cell_organelle$PeakMeasureInt - merge_cell_organelle$MeanBackgroundMeasure
+  merge_cell_organelle$PeakMeasureBackSub <- 
+    merge_cell_organelle$PeakMeasureInt - merge_cell_organelle$MeanBackgroundMeasure
   
 }
 
-merge_cell_organelle$DistanceNorm <- merge_cell_organelle$DistanceCal / merge_cell_organelle$Ferets
+merge_cell_organelle$DistanceNorm <- 
+  merge_cell_organelle$DistanceCal / merge_cell_organelle$Ferets
 
 
 summary_table <- merge_cell_organelle %>% 
@@ -94,12 +103,11 @@ summary_table <- merge_cell_organelle %>%
   summarise(across(DistanceRaw:DistanceNorm, mean, na.rm =TRUE )) %>% 
   rename_at(vars(-Name, -Series, -Cell),function(x) paste0(x,".mean"))
 
-merged_summary <- merge(cell_measure_filter, summary_table, by = c("Name", "Series", "Cell"))
+merged_summary <- merge(cell_measure_filter, 
+                        summary_table, by = c("Name", "Series", "Cell"))
 
 # ==============================================================================
 # save processed data
-result_path <- file.path(outdir, result_name, fsep = .Platform$file.sep)
-
 write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
            merge_cell_organelle, 
            sheetName="Sheet1",  
@@ -118,24 +126,40 @@ write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""),
            showNA=TRUE)
 # ==============================================================================
 # plots area, number of detections and mean value
-measure1 <- list("Ferets", "CellArea", "NumDetections", "MeanOrgaBackSub")
-measure1Title <- list("Average Feret's diameter", "Average cell area", "Number of detections per cell", "Average intensity in cell (detection channel)")
-measure1Label <- list("ferets diameter (µm)", "cell area (µm²)", "average count", "fluorescent intensity (A.U.)")
-measure1File <- list("feretPlot", "cellArea", "numDetections", "intPerCellDetection")
+measure1 <- list("Ferets", 
+                 "CellArea", 
+                 "NumDetections", 
+                 "MeanOrgaBackSub")
 
-cell_measure.long <- cell_measure_filter %>% pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
+measure1_title <- list("Average Feret's diameter", 
+                       "Average cell area", 
+                       "Number of detections per cell", 
+                       "Average intensity in cell (detection channel)")
+
+measure1_label <- list("ferets diameter (µm)", 
+                       "cell area (µm²)", 
+                       "average count", 
+                       "fluorescent intensity (A.U.)")
+
+measure1_file <- list("feretPlot", 
+                      "cellArea", 
+                      "numDetections", 
+                      "intPerCellDetection")
+
+cell_measure_long <- cell_measure_filter %>% 
+  pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
 
 for (index in seq_along(measure1)) {
   
-  dataSubset <- subset(cell_measure.long, cell_measure.long$name==measure1[index])
+  dataSubset <- subset(cell_measure_long, cell_measure_long$name==measure1[index])
   
   plot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
     geom_boxplot(outlier.size = 2, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
-    ggtitle(measure1Title[index]) + 
+    ggtitle(measure1_title[index]) + 
     xlab("Treatment") +
-    ylab( measure1Label[index] ) +
+    ylab( measure1_label[index] ) +
     theme_bw() +
     theme(axis.line = element_line(colour = "black"),
           panel.grid.major = element_blank(),
@@ -143,44 +167,82 @@ for (index in seq_along(measure1)) {
           panel.border = element_blank(),
           panel.background = element_blank(),
           # x axis ticks
-          axis.text.x = element_text(color = "grey20", size = 22, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          axis.text.x = element_text(color = "grey20", 
+                                     size = 22, 
+                                     angle = 45, 
+                                     hjust = .5, 
+                                     vjust = .5, 
+                                     face = "plain"),
           # y axis ticks
-          axis.text.y = element_text(color = "grey20", size = 22, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          axis.text.y = element_text(color = "grey20", 
+                                     size = 22, 
+                                     angle = 0, 
+                                     hjust = 1, 
+                                     vjust = 0, 
+                                     face = "plain"),
           # x axis labels
-          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          axis.title.x = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 0, 
+                                      hjust = .5, 
+                                      vjust = 0, 
+                                      face = "plain"),
           # y axis labels
-          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 90, 
+                                      hjust = .5, 
+                                      vjust = .5, 
+                                      face = "plain"),
           # title
-          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain")
+          title = element_text(color = "grey20", 
+                               size = 25, 
+                               angle = 0, 
+                               hjust = 0, 
+                               vjust = 1, 
+                               face = "plain")
     )
   
   print(plot)
   
-  ggsave(file=paste0(plots, .Platform$file.sep, measure1File[index], ".pdf"), 
+  ggsave(file=paste0(plots, .Platform$file.sep, measure1_file[index], ".pdf"), 
          width = 297, height = 210, units = "mm")
   
 }
 
 # ------------------------------------------------------------------------------
 # plot distance and detection intensity
-measure2 <- list("PeakDetectBackSub.mean", "DistanceCal.mean", "DistanceNorm.mean")
-measure2Title <- list("Average peak detection intensity  (detection channel)", "Average distance from nucleus", "Average normalized distance from nucleus")
-measure2Label <- list("fluorescent intensity (A.U.)", "distance (µm)", "normalized distance")
-measure2File <- list("intPerDetectionDetectionChannel", "distance", "distanceNorm")
+measure2 <- list("PeakDetectBackSub.mean", 
+                 "DistanceCal.mean", 
+                 "DistanceNorm.mean")
 
-summary.long <- summary_table %>% pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, values_to = "measurement" )
+measure2_title <- list("Average peak detection intensity  (detection channel)", 
+                       "Average distance from nucleus", 
+                       "Average normalized distance from nucleus")
+
+measure2_label <- list("fluorescent intensity (A.U.)", 
+                       "distance (µm)", 
+                       "normalized distance")
+
+measure2_file <- list("intPerDetectionDetectionChannel", 
+                      "distance", 
+                      "distanceNorm")
+
+summary_long <- summary_table %>% 
+  pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, 
+               values_to = "measurement" )
 
 for (index in seq_along(measure2)) {
   
-  dataSubset <- subset(summary.long, summary.long$name==measure2[index])
+  dataSubset <- subset(summary_long, summary_long$name==measure2[index])
   
   plot <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
     geom_boxplot(outlier.size = 2, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
-    ggtitle(measure2Title[index]) + 
+    ggtitle(measure2_title[index]) + 
     xlab("Treatment") +
-    ylab(measure2Label[index]) +
+    ylab(measure2_label[index]) +
     theme_bw() +
     theme(axis.line = element_line(colour = "black"),
           panel.grid.major = element_blank(),
@@ -188,20 +250,45 @@ for (index in seq_along(measure2)) {
           panel.border = element_blank(),
           panel.background = element_blank(),
           # x axis ticks
-          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          axis.text.x = element_text(color = "grey20", 
+                                     size = 16, 
+                                     angle = 45, 
+                                     hjust = .5, 
+                                     vjust = .5, 
+                                     face = "plain"),
           # y axis ticks
-          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          axis.text.y = element_text(color = "grey20", 
+                                     size = 15, 
+                                     angle = 0, 
+                                     hjust = 1, 
+                                     vjust = 0, 
+                                     face = "plain"),
           # x axis labels
-          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          axis.title.x = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 0, 
+                                      hjust = .5, 
+                                      vjust = 0, 
+                                      face = "plain"),
           # y axis labels
-          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 90, 
+                                      hjust = .5, 
+                                      vjust = .5, 
+                                      face = "plain"),
           # title 
-          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain")
+          title = element_text(color = "grey20", 
+                               size = 25, 
+                               angle = 0, 
+                               hjust = 0, 
+                               vjust = 1, 
+                               face = "plain")
     )
   
   print(plot)
   
-  ggsave(file=paste0(plots, .Platform$file.sep, measure2File[index], ".pdf"), 
+  ggsave(file=paste0(plots, .Platform$file.sep, measure2_file[index], ".pdf"), 
          width = 297, height = 210, units = "mm")
   
 }
@@ -224,15 +311,40 @@ if (cell_column == 10 && orga_column == 10) {
           panel.border = element_blank(),
           panel.background = element_blank(),
           # x axis ticks
-          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          axis.text.x = element_text(color = "grey20", 
+                                     size = 16, 
+                                     angle = 45, 
+                                     hjust = .5, 
+                                     vjust = .5, 
+                                     face = "plain"),
           # y axis ticks
-          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          axis.text.y = element_text(color = "grey20", 
+                                     size = 15, 
+                                     angle = 0, 
+                                     hjust = 1, 
+                                     vjust = 0, 
+                                     face = "plain"),
           # x axis labels
-          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          axis.title.x = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 0, 
+                                      hjust = .5, 
+                                      vjust = 0, 
+                                      face = "plain"),
           # y axis labels
-          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 90, 
+                                      hjust = .5, 
+                                      vjust = .5, 
+                                      face = "plain"),
           # title
-          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain") )
+          title = element_text(color = "grey20", 
+                               size = 25, 
+                               angle = 0, 
+                               hjust = 0, 
+                               vjust = 1, 
+                               face = "plain") )
   
   print(plot)
   
@@ -253,15 +365,40 @@ if (cell_column == 10 && orga_column == 10) {
           panel.border = element_blank(),
           panel.background = element_blank(),
           # x axis ticks
-          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          axis.text.x = element_text(color = "grey20", 
+                                     size = 16, 
+                                     angle = 45, 
+                                     hjust = .5, 
+                                     vjust = .5, 
+                                     face = "plain"),
           # y axis ticks
-          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          axis.text.y = element_text(color = "grey20", 
+                                     size = 15, 
+                                     angle = 0, 
+                                     hjust = 1, 
+                                     vjust = 0, 
+                                     face = "plain"),
           # x axis labels
-          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          axis.title.x = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 0, 
+                                      hjust = .5, 
+                                      vjust = 0, 
+                                      face = "plain"),
           # y axis labels
-          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          axis.title.y = element_text(color = "grey20", 
+                                      size = 22, 
+                                      angle = 90, 
+                                      hjust = .5, 
+                                      vjust = .5, 
+                                      face = "plain"),
           # title
-          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain") )
+          title = element_text(color = "grey20", 
+                               size = 25, 
+                               angle = 0, 
+                               hjust = 0, 
+                               vjust = 1, 
+                               face = "plain") )
   
   print(plot)
   
@@ -331,10 +468,6 @@ head(merge.table_intensity)
 
 intMeasure <- read.csv(lysDist.filenames[1], header = TRUE)
 head(intMeasure)
-
-
-
-
 
 for (name in lysDist.filenames[1]) {
   
@@ -444,15 +577,13 @@ head(value.listCollected)
 
 # ------------------------------------------------------------------------------
 # merged_summary
-write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
-                          "_intensityProfile.xlsx", sep = ""), 
+write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
            value.listCollected, 
            sheetName="Sheet1",  
            col.names=TRUE, 
            row.names=TRUE, 
            append=FALSE, 
            showNA=TRUE)
-
 
 # ------------------------------------------------------------------------------
 head(value.listCollected)
@@ -476,6 +607,23 @@ print(plot)
 
 ggsave(file=paste0(plots, .Platform$file.sep, "intensityProfile_orgaCh", ".pdf"), 
        width = 297, height = 210, units = "mm")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # ==============================================================================
 # Statistical analysis

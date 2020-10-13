@@ -171,6 +171,53 @@ boxplot_theme <- function() {
                              face = "plain")
   )
 }
+
+lineplot_theme <- function() {
+  theme_bw()
+  
+  theme(
+    axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.border = element_blank(),
+    panel.background = element_blank(),
+    # x axis ticks
+    axis.text.x = element_text(color = "grey20", 
+                               size = 16, 
+                               angle = 0, 
+                               hjust = .5, 
+                               vjust = .5, 
+                               face = "plain"),
+    # y axis ticks
+    axis.text.y = element_text(color = "grey20", 
+                               size = 16, 
+                               angle = 0, 
+                               hjust = 1, 
+                               vjust = 0, 
+                               face = "plain"),
+    # x axis labels
+    axis.title.x = element_text(color = "grey20", 
+                                size = 22, 
+                                angle = 0, 
+                                hjust = .5, 
+                                vjust = 0, 
+                                face = "plain"),
+    # y axis labels
+    axis.title.y = element_text(color = "grey20", 
+                                size = 22, 
+                                angle = 90, 
+                                hjust = .5, 
+                                vjust = .5, 
+                                face = "plain"),
+    # title
+    title = element_text(color = "grey20", 
+                         size = 25, 
+                         angle = 0, 
+                         hjust = 0, 
+                         vjust = 1, 
+                         face = "plain")
+  )
+}
 # ==============================================================================
 # plots area, number of detections and mean value
 measure1 <- list("Ferets", 
@@ -310,7 +357,7 @@ for (name in name_count$Var1){
                             to = norm_distance_nucleus)
   
   data_frame <- data.frame(density_per_name$x)
-  dataframe$y <- density_per_name$y
+  data_frame$y <- density_per_name$y
   colnames(data_frame)[1] <- "x"
   
   # peak normalisation
@@ -332,10 +379,13 @@ colnames(norm_list2)[2] <- "index"
 # density plots with peak normalized data
 plot <- ggplot(norm_list2, aes(x = x, y = peak_norm, group = name, color = name)) + 
   geom_line() +
-  #theme_bw(base_size = 20) +
   xlab("Normalized distance from Nucleus") +
   ylab("Lysosome density (peak norm)") +
-  ggtitle("Peak normalized density plots")
+  ggtitle("Peak normalized density plots") +
+  scale_x_continuous(expand = c(0, 0)) + # force start at 0
+  scale_y_continuous(expand = c(0, 0)) + # force start at 0
+  lineplot_theme()
+  
 
 print(plot)
 

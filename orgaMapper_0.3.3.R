@@ -125,6 +125,53 @@ write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""),
            append=FALSE, 
            showNA=TRUE)
 # ==============================================================================
+boxplot_theme <- function() {
+  theme_bw()
+  
+  theme(
+    axis.line = element_line(colour = "black"),
+    panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        panel.background = element_blank(),
+        # x axis ticks
+        axis.text.x = element_text(color = "grey20", 
+                                   size = 16, 
+                                   angle = 45, 
+                                   hjust = .5, 
+                                   vjust = .5, 
+                                   face = "plain"),
+        # y axis ticks
+        axis.text.y = element_text(color = "grey20", 
+                                   size = 16, 
+                                   angle = 0, 
+                                   hjust = 1, 
+                                   vjust = 0, 
+                                   face = "plain"),
+        # x axis labels
+        axis.title.x = element_text(color = "grey20", 
+                                    size = 22, 
+                                    angle = 0, 
+                                    hjust = .5, 
+                                    vjust = 0, 
+                                    face = "plain"),
+        # y axis labels
+        axis.title.y = element_text(color = "grey20", 
+                                    size = 22, 
+                                    angle = 90, 
+                                    hjust = .5, 
+                                    vjust = .5, 
+                                    face = "plain"),
+        # title
+        title = element_text(color = "grey20", 
+                             size = 25, 
+                             angle = 0, 
+                             hjust = 0, 
+                             vjust = 1, 
+                             face = "plain")
+  )
+}
+# ==============================================================================
 # plots area, number of detections and mean value
 measure1 <- list("Ferets", 
                  "CellArea", 
@@ -154,54 +201,13 @@ for (index in seq_along(measure1)) {
   dataSubset <- subset(cell_measure_long, cell_measure_long$name==measure1[index])
   
   plot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
-    geom_boxplot(outlier.size = 2, outlier.shape = 1) +
+    geom_boxplot(outlier.size = 0, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
     ggtitle(measure1_title[index]) + 
     xlab("Treatment") +
-    ylab( measure1_label[index] ) +
-    theme_bw() +
-    theme(axis.line = element_line(colour = "black"),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.border = element_blank(),
-          panel.background = element_blank(),
-          # x axis ticks
-          axis.text.x = element_text(color = "grey20", 
-                                     size = 22, 
-                                     angle = 45, 
-                                     hjust = .5, 
-                                     vjust = .5, 
-                                     face = "plain"),
-          # y axis ticks
-          axis.text.y = element_text(color = "grey20", 
-                                     size = 22, 
-                                     angle = 0, 
-                                     hjust = 1, 
-                                     vjust = 0, 
-                                     face = "plain"),
-          # x axis labels
-          axis.title.x = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 0, 
-                                      hjust = .5, 
-                                      vjust = 0, 
-                                      face = "plain"),
-          # y axis labels
-          axis.title.y = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 90, 
-                                      hjust = .5, 
-                                      vjust = .5, 
-                                      face = "plain"),
-          # title
-          title = element_text(color = "grey20", 
-                               size = 25, 
-                               angle = 0, 
-                               hjust = 0, 
-                               vjust = 1, 
-                               face = "plain")
-    )
+    ylab( measure1_label[index] ) + 
+    boxplot_theme()
   
   print(plot)
   
@@ -237,54 +243,13 @@ for (index in seq_along(measure2)) {
   dataSubset <- subset(summary_long, summary_long$name==measure2[index])
   
   plot <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
-    geom_boxplot(outlier.size = 2, outlier.shape = 1) +
+    geom_boxplot(outlier.size = 0, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
     ggtitle(measure2_title[index]) + 
     xlab("Treatment") +
     ylab(measure2_label[index]) +
-    theme_bw() +
-    theme(axis.line = element_line(colour = "black"),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.border = element_blank(),
-          panel.background = element_blank(),
-          # x axis ticks
-          axis.text.x = element_text(color = "grey20", 
-                                     size = 16, 
-                                     angle = 45, 
-                                     hjust = .5, 
-                                     vjust = .5, 
-                                     face = "plain"),
-          # y axis ticks
-          axis.text.y = element_text(color = "grey20", 
-                                     size = 15, 
-                                     angle = 0, 
-                                     hjust = 1, 
-                                     vjust = 0, 
-                                     face = "plain"),
-          # x axis labels
-          axis.title.x = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 0, 
-                                      hjust = .5, 
-                                      vjust = 0, 
-                                      face = "plain"),
-          # y axis labels
-          axis.title.y = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 90, 
-                                      hjust = .5, 
-                                      vjust = .5, 
-                                      face = "plain"),
-          # title 
-          title = element_text(color = "grey20", 
-                               size = 25, 
-                               angle = 0, 
-                               hjust = 0, 
-                               vjust = 1, 
-                               face = "plain")
-    )
+    boxplot_theme()
   
   print(plot)
   
@@ -301,50 +266,10 @@ if (cell_column == 10 && orga_column == 10) {
     ggtitle("Average intensity in cell (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
-    geom_boxplot(outlier.size = 2, outlier.shape = 1) + 
+    geom_boxplot(outlier.size = 0, outlier.shape = 1) + 
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
-    theme_bw() +
-    theme(axis.line = element_line(colour = "black"),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.border = element_blank(),
-          panel.background = element_blank(),
-          # x axis ticks
-          axis.text.x = element_text(color = "grey20", 
-                                     size = 16, 
-                                     angle = 45, 
-                                     hjust = .5, 
-                                     vjust = .5, 
-                                     face = "plain"),
-          # y axis ticks
-          axis.text.y = element_text(color = "grey20", 
-                                     size = 15, 
-                                     angle = 0, 
-                                     hjust = 1, 
-                                     vjust = 0, 
-                                     face = "plain"),
-          # x axis labels
-          axis.title.x = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 0, 
-                                      hjust = .5, 
-                                      vjust = 0, 
-                                      face = "plain"),
-          # y axis labels
-          axis.title.y = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 90, 
-                                      hjust = .5, 
-                                      vjust = .5, 
-                                      face = "plain"),
-          # title
-          title = element_text(color = "grey20", 
-                               size = 25, 
-                               angle = 0, 
-                               hjust = 0, 
-                               vjust = 1, 
-                               face = "plain") )
+    boxplot_theme()
   
   print(plot)
   
@@ -355,50 +280,10 @@ if (cell_column == 10 && orga_column == 10) {
     ggtitle("Average peak detection intensity (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
-    geom_boxplot(outlier.size = 2, outlier.shape = 1) + 
+    geom_boxplot(outlier.size = 0, outlier.shape = 1) + 
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
-    theme_bw() +
-    theme(axis.line = element_line(colour = "black"),
-          panel.grid.major = element_blank(),
-          panel.grid.minor = element_blank(),
-          panel.border = element_blank(),
-          panel.background = element_blank(),
-          # x axis ticks
-          axis.text.x = element_text(color = "grey20", 
-                                     size = 16, 
-                                     angle = 45, 
-                                     hjust = .5, 
-                                     vjust = .5, 
-                                     face = "plain"),
-          # y axis ticks
-          axis.text.y = element_text(color = "grey20", 
-                                     size = 15, 
-                                     angle = 0, 
-                                     hjust = 1, 
-                                     vjust = 0, 
-                                     face = "plain"),
-          # x axis labels
-          axis.title.x = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 0, 
-                                      hjust = .5, 
-                                      vjust = 0, 
-                                      face = "plain"),
-          # y axis labels
-          axis.title.y = element_text(color = "grey20", 
-                                      size = 22, 
-                                      angle = 90, 
-                                      hjust = .5, 
-                                      vjust = .5, 
-                                      face = "plain"),
-          # title
-          title = element_text(color = "grey20", 
-                               size = 25, 
-                               angle = 0, 
-                               hjust = 0, 
-                               vjust = 1, 
-                               face = "plain") )
+    boxplot_theme()
   
   print(plot)
   

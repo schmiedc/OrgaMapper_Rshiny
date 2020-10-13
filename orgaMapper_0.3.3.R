@@ -1,0 +1,536 @@
+library(ggplot2)
+library(gridExtra)
+library(tidyverse)
+library("openxlsx")
+# ==============================================================================
+#
+#  DESCRIPTION: Analysis script for OrgaMapper
+#              
+#       AUTHOR: Christopher Schmied, 
+#      CONTACT: schmied@dzne.de
+#     INSITUTE: Leibniz-Forschungsinstitut f r Molekulare Pharmakologie (FMP)
+#               Cellular Imaging - Core facility
+#               Campus Berlin-Buch
+#               Robert-Roessle-Str. 10
+#               13125 Berlin, Germany
+#
+#         BUGS:
+#        NOTES: 
+# DEPENDENCIES:
+#
+#
+#      VERSION: 0.3.3
+#      CREATED: 2020-07-28
+#     REVISION: 2020-10-12
+#
+# ==============================================================================
+# user defined parameters
+
+# path to folder where the directories for the measurements are
+directory = "/home/schmiedc/Desktop/Test/test_nd2/output/"
+
+result_name = "Analysis_test"
+
+# filter for feret's diameter
+feret_lower = 0
+feret_upper = 600
+
+# determine range for plots
+norm_distance_nucleus = 0.7
+
+# ==============================================================================
+# where to save the data
+setwd(directory)
+indir = getwd()
+outdir =  getwd()
+
+# plot dir
+plots = "plots"
+dir.create("plots", showWarnings = FALSE)
+
+# ==============================================================================
+# read the data
+name_distance = "organelleDistance.csv"
+name_cell_measure = "cellMeasurements.csv"
+
+
+organelle_distance <- read.csv(name_distance, header = TRUE)
+cell_measure <- read.csv(name_cell_measure, header = TRUE)
+
+# get number of columns from datasets
+orga_column = ncol(organelle_distance);
+cell_column = ncol(cell_measure);
+
+# background subtraction
+# ==============================================================================
+# data processing
+# filter for feret diameter range
+# background subtraction
+# normalized lysosome distance
+
+# filter for a feret size range
+cellMeasure_filter <- subset(cell_measure, Ferets >= feret_lower & Ferets <= feret_upper)
+
+# background subtraction for mean organelle intensity per cell
+cellMeasure_filter$MeanOrgaBackSub <- cellMeasure_filter$MeanValueOrga - cellMeasure_filter$MeanBackgroundOrga
+
+if (cell_column == 10 && orga_column == 10) {
+  
+  cellMeasure_filter$MeanMeasureBackSub <- cellMeasure_filter$MeanValueMeasure - cellMeasure_filter$MeanBackgroundMeasure
+  
+}
+
+# merge results
+merge.table <- merge(cellMeasure_filter, organelle_distance, by = c("Name", "Series", "Cell"))
+
+# background subtraction for detection intensity
+merge.table$PeakDetectBackSub <- merge.table$PeakDetectionInt - merge.table$MeanBackgroundOrga
+
+if (cell_column == 10 && orga_column == 10) {
+  
+  merge.table$PeakMeasureBackSub <- merge.table$PeakMeasureInt - merge.table$MeanBackgroundMeasure
+  
+}
+
+# normalized lysosome distance with feret's diameter
+merge.table$DistanceNorm <- merge.table$DistanceCal / merge.table$Ferets
+
+# calculate mean per cell
+summary.table <- merge.table %>% 
+  group_by(Name, Series, Cell) %>% 
+  summarise(across(DistanceRaw:DistanceNorm, mean, na.rm =TRUE )) %>% 
+  rename_at(vars(-Name, -Series, -Cell),function(x) paste0(x,".mean"))
+
+merged.summary <- merge(cellMeasure_filter, summary.table, by = c("Name", "Series", "Cell"))
+
+# ==============================================================================
+# save processed data
+# merge.table
+write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
+                          "_detection.xlsx", sep = ""), 
+           merge.table, 
+           sheetName="Sheet1",  
+           col.names=TRUE, 
+           row.names=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+# merged.summary
+write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
+                          "_cell.xlsx", sep = ""), 
+           merged.summary, 
+           sheetName="Sheet1",  
+           col.names=TRUE, 
+           row.names=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+# ==============================================================================
+# plots area, number of detections and mean value
+measure1 <- list("Ferets", "CellArea", "NumDetections", "MeanOrgaBackSub")
+measure1Title <- list("Average Feret's diameter", "Average cell area", "Number of detections per cell", "Average intensity in cell (detection channel)")
+measure1Label <- list("ferets diameter (µm)", "cell area (µm²)", "average count", "fluorescent intensity (A.U.)")
+measure1File <- list("feretPlot", "cellArea", "numDetections", "intPerCellDetection")
+
+cell_measure.long <- cellMeasure_filter %>% pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
+
+for (index in seq_along(measure1)) {
+  
+  dataSubset <- subset(cell_measure.long, cell_measure.long$name==measure1[index])
+  
+  plot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
+    geom_boxplot() +
+    stat_boxplot(geom = 'errorbar', width = 0.2) +
+    geom_jitter(width = 0.1) +
+    ggtitle(measure1Title[index]) + 
+    xlab("Treatment") +
+    ylab( measure1Label[index] ) +
+    theme_bw() +
+    theme(axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank(),
+          # x axis ticks
+          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          # y axis ticks
+          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          # x axis labels
+          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          # y axis labels
+          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          # title
+          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain")
+    )
+  
+  print(plot)
+  
+  ggsave(file=paste0(plots, .Platform$file.sep, measure1File[index], ".pdf"), 
+         width = 297, height = 210, units = "mm")
+  
+}
+
+# ------------------------------------------------------------------------------
+# plot distance and detection intensity
+measure2 <- list("PeakDetectBackSub.mean", "DistanceCal.mean", "DistanceNorm.mean")
+measure2Title <- list("Average peak detection intensity  (detection channel)", "Average distance from nucleus", "Average normalized distance from nucleus")
+measure2Label <- list("fluorescent intensity (A.U.)", "distance (µm)", "normalized distance")
+measure2File <- list("intPerDetectionDetectionChannel", "distance", "distanceNorm")
+
+summary.long <- summary.table %>% pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, values_to = "measurement" )
+
+for (index in seq_along(measure2)) {
+  
+  dataSubset <- subset(summary.long, summary.long$name==measure2[index])
+  
+  plot <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
+    geom_boxplot() +
+    stat_boxplot(geom = 'errorbar', width = 0.2) +
+    geom_jitter(width = 0.1) +
+    ggtitle(measure2Title[index]) + 
+    xlab("Treatment") +
+    ylab(measure2Label[index]) +
+    theme_bw() +
+    theme(axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank(),
+          # x axis ticks
+          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          # y axis ticks
+          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          # x axis labels
+          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          # y axis labels
+          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          # title 
+          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain")
+    )
+  
+  print(plot)
+  
+  ggsave(file=paste0(plots, .Platform$file.sep, measure2File[index], ".pdf"), 
+         width = 297, height = 210, units = "mm")
+  
+}
+
+# ------------------------------------------------------------------------------
+# plot measure channel
+if (cell_column == 10 && orga_column == 10) {
+  
+  plot <- ggplot(cellMeasure_filter, aes(x=Name, y=MeanMeasureBackSub)) +
+    ggtitle("Average intensity in cell (measure channel)") + 
+    xlab("Treatment") +
+    ylab("fluorescent intensity (A.U.)") +
+    geom_boxplot() + 
+    stat_boxplot(geom = 'errorbar', width = 0.2) +
+    geom_jitter(width = 0.1) +
+    theme_bw() +
+    theme(axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank(),
+          # x axis ticks
+          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          # y axis ticks
+          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          # x axis labels
+          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          # y axis labels
+          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          # title
+          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain") )
+  
+  print(plot)
+  
+  ggsave(file=paste0(plots, .Platform$file.sep, "intPerCellMeasure", ".pdf"), 
+         width = 297, height = 210, units = "mm")
+  
+  plot <- ggplot(summary.table, aes(x=Name, y=PeakMeasureBackSub.mean)) +
+    ggtitle("Average peak detection intensity (measure channel)") + 
+    xlab("Treatment") +
+    ylab("fluorescent intensity (A.U.)") +
+    geom_boxplot() + 
+    stat_boxplot(geom = 'errorbar', width = 0.2) +
+    geom_jitter(width = 0.1) +
+    theme_bw() +
+    theme(axis.line = element_line(colour = "black"),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_blank(),
+          panel.background = element_blank(),
+          # x axis ticks
+          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          # y axis ticks
+          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          # x axis labels
+          axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
+          # y axis labels
+          axis.title.y = element_text(color = "grey20", size = 22, angle = 90, hjust = .5, vjust = .5, face = "plain"),
+          # title
+          title = element_text(color = "grey20", size = 25, angle = 0, hjust = 0, vjust = 1, face = "plain") )
+  
+  print(plot)
+  
+  ggsave(file=paste0(plots, .Platform$file.sep, "intPerDetectionMeasureChannel", ".pdf"), 
+         width = 297, height = 210, units = "mm")
+  
+}
+
+# ------------------------------------------------------------------------------
+# lysosome density plots
+name.count <- as.data.frame(table(merge.table$Name))
+max.list <- list()
+
+# goes through each experiment and calculates lysosome density
+# then peak normalizes the lysosome density
+# collects these normalized density plots in max.list
+for (name in name.count$Var1){
+  
+  dataPerWell <- subset(merge.table, Name == name)
+  densityPerWell <- density(dataPerWell$DistanceNorm, 
+                            bw = "nrd0", 
+                            n = 512, 
+                            from = 0, 
+                            to = norm_distance_nucleus)
+  
+  dataframe <- data.frame(densityPerWell$x)
+  dataframe$y <- densityPerWell$y
+  colnames(dataframe)[1] <- "x"
+  
+  # peak normalisation
+  max = max(dataframe$y, na.rm = FALSE)
+  dataframe$peak_norm <- sapply(dataframe$y, function(x){x /  max})
+  max.list[[name]] <- dataframe
+  
+}
+
+# binds collection of normalized density plots and binds them into one dataframe
+norm.list <- do.call("rbind", max.list)
+norm.list1 <- tibble::rownames_to_column(norm.list, "nameindex")
+norm.list1.indices <- str_split_fixed(norm.list1$nameindex, "\\.", 2)
+norm.list2 <- cbind(norm.list1.indices, norm.list1)
+colnames(norm.list2)[1] <- "name"
+colnames(norm.list2)[2] <- "index"
+
+# Plot Lysosome density vs normalized distance from Nucleus
+# density plots with peak normalized data
+plot <- ggplot(norm.list2, aes(x = x, y = peak_norm, group = name, color = name)) + 
+  geom_line() +
+  #theme_bw(base_size = 20) +
+  xlab("Normalized distance from Nucleus") +
+  ylab("Lysosome density (peak norm)") +
+  ggtitle("Peak normalized density plots")
+
+print(plot)
+
+ggsave(file=paste0(plots, .Platform$file.sep, "idensityPlot", ".pdf"), 
+       width = 297, height = 210, units = "mm")
+
+# ==============================================================================
+# get value distances for each image
+nameIntMeas = "intDistance.csv"
+lysDist.filenames <- list.files(recursive=TRUE, pattern=nameIntMeas,full.names = TRUE)
+head(lysDist.filenames)
+value.list <- list()
+
+head(merge.table_intensity)
+
+intMeasure <- read.csv(lysDist.filenames[1], header = TRUE)
+head(intMeasure)
+
+
+
+
+
+for (name in lysDist.filenames[1]) {
+  
+  intMeasure <- read.csv(name, header = TRUE)
+  intColumn = ncol(intMeasure)
+  
+  print(">>Start 1")
+  # merge cell measurements with intensity profiles
+  merge.table_intensity <- merge(cellMeasure_filter, 
+                                 intMeasure, 
+                                 by = c("Name", "Series", "Cell"))
+  
+  # distance normalization
+  merge.table_intensity$DistanceNorm <- merge.table_intensity$DistanceCal / merge.table_intensity$Ferets
+  
+  # background subtraction for detection intensity
+  merge.table_intensity$orgaIntBackSub <- merge.table_intensity$orgaInt - merge.table_intensity$MeanBackgroundOrga
+  
+  if (cell_column == 10 && intColumn == 9) {
+    
+    merge.table_intensity$measureIntBackSub <- merge.table_intensity$measureInt - merge.table_intensity$MeanBackgroundMeasure
+    
+  }
+  
+  head(merge.table_intensity)
+  
+  # calculate mean intensity over bins with fixed width between 0 and 0.1
+  orga <- tapply(merge.table_intensity$orgaInt, 
+                 cut(merge.table_intensity$DistanceCal, 
+                     seq(0, 0.1, by=0.005)), mean)
+  
+  head(orga)
+  
+  # transform output of tapply to data frame
+  orga1 <- as.data.frame(as.table(orga))
+  colnames(orga1) <- c("bin", "mean_orga")
+  
+  
+  
+  print(">>Start 2")
+  # cleanup data frame
+  orga1$bin <- str_remove_all(orga1$bin, "[]\\(]")
+  orga1$bin <- str_replace(orga1$bin, ",", "-")
+  
+  # calculate mean intensity over bins with fixed width between 0 and 0.1
+  orga_norm <- tapply(merge.table_intensity$orgaIntBackSub, 
+                      cut(merge.table_intensity$DistanceNorm, 
+                          seq(0, 0.1, by=0.005)), mean)
+  
+  # transform output of tapply to data frame
+  orga_norm1 <- as.data.frame(as.table(orga_norm))
+  colnames(orga_norm1) <- c("bin", "mean_orga_norm")
+  
+  # cleanup data frame
+  orga_norm1$bin <- str_remove_all(orga_norm1$bin, "[]\\(]")
+  orga_norm1$bin <- str_replace(orga_norm1$bin, ",", "-")
+  
+  # remerge with name and other data 
+  value_result <- merge (orga1, orga_norm1, by = "bin")
+  
+  if (cell_column == 10 && intColumn == 9) {
+    
+    print(">>Start 3")
+    # calculate mean intensity over bins with fixed width between 0 and 0.1
+    measure <- tapply(merge.table_intensity$measureInt, 
+                      cut(merge.table_intensity$DistanceCal, 
+                          seq(0, 0.1, by=0.005)), mean)
+    
+    # transform output of tapply to data frame
+    measure1 <- as.data.frame(as.table(measure))
+    colnames(measure1) <- c("bin", "mean_measure")
+    
+    # cleanup data frame
+    measure1$bin <- str_remove_all(measure1$bin, "[]\\(]")
+    measure1$bin <- str_replace(measure1$bin, ",", "-")
+    
+    print(">>Start 4")
+    # calculate mean intensity over bins with fixed width between 0 and 0.1
+    measure_norm <- tapply(merge.table_intensity$measureIntBackSub, 
+                           cut(merge.table_intensity$DistanceNorm, 
+                               seq(0, 0.1, by=0.005)), mean)
+    
+    # transform output of tapply to data frame
+    measure_norm1 <- as.data.frame(as.table(measure_norm))
+    colnames(measure_norm1) <- c("bin", "mean_measure_norm")
+    
+    # cleanup data frame
+    measure_norm1$bin <- str_remove_all(measure_norm1$bin, "[]\\(]")
+    measure_norm1$bin <- str_replace(measure_norm1$bin, ",", "-")
+    
+    # remerge with name and other data 
+    measure_result <- merge(measure1, measure_norm1, by = "bin")
+    value_result <- merge(value_result, measure_result, by = "bin")
+    
+  }
+  
+  table.info <- merge.table_intensity[1,1:12]
+  value_result2 <- merge(table.info, value_result, by=NULL)
+  
+  value.list[[name]] <- value_result2
+  
+}
+
+# binds collection of normalized density plots and binds them into one dataframe
+value.listCollected <- do.call("rbind", value.list)
+head(value.listCollected)
+
+# ------------------------------------------------------------------------------
+# merged.summary
+write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
+                          "_intensityProfile.xlsx", sep = ""), 
+           value.listCollected, 
+           sheetName="Sheet1",  
+           col.names=TRUE, 
+           row.names=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+
+# ------------------------------------------------------------------------------
+head(value.listCollected)
+
+# calculate mean per cell
+summary.intensity <- value.listCollected %>% 
+  group_by(Name, bin) %>% 
+  summarise(across(mean_intensity, mean, na.rm =TRUE ))
+
+head(summary.intensity)
+
+plot <- ggplot(data=summary.intensity, aes(x=bin, y=mean_intensity, group=Name)) +
+  geom_line(aes(color=Name)) +
+  geom_point(aes(color=Name)) +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  xlab("Normalized distance from Nucleus") +
+  ylab("Fluorescent intensity (A.U.)") +
+  ggtitle("Intensity profile")
+
+print(plot)
+
+ggsave(file=paste0(plots, .Platform$file.sep, "intensityProfile_orgaCh", ".pdf"), 
+       width = 297, height = 210, units = "mm")
+
+# ==============================================================================
+# Statistical analysis
+# split data into control and treatment
+controlName = 'HeLa_scr'
+treatName = 'HeLa_siArl8b'
+
+HeLa_scr <- subset(merged.summary, Name == controlName)
+HeLa_siArl8b <- subset(merged.summary, Name == treatName)
+
+# DistanceNorm.mean
+## Shapiro-Wilk Normality Test - normality of univariante sample
+with(merged.summary, shapiro.test(DistanceNorm.mean[Name == controlName]))
+with(merged.summary, shapiro.test(DistanceNorm.mean[Name == treatName]))
+
+## if data is normally distributed then perform F-test
+## f-test checks if both distributions have similar variance
+
+## not normaly distributed thus Wilcoxon Test
+test <- wilcox.test(HeLa_scr$DistanceNorm.mean, HeLa_siArl8b$DistanceNorm.mean)
+test$p.value
+
+# DistanceCal.mean
+with(merged.summary, shapiro.test(DistanceCal.mean[Name == controlName]))
+with(merged.summary, shapiro.test(DistanceCal.mean[Name == treatName]))
+
+test <- wilcox.test(HeLa_scr$DistanceCal.mean, HeLa_siArl8b$DistanceCal.mean)
+test$p.value
+
+# CellArea
+with(merged.summary, shapiro.test(CellArea[Name == controlName]))
+with(merged.summary, shapiro.test(CellArea[Name == treatName]))
+
+test <- wilcox.test(HeLa_scr$CellArea, HeLa_siArl8b$CellArea)
+test$p.value
+
+# Ferets
+with(merged.summary, shapiro.test(Ferets[Name == controlName]))
+with(merged.summary, shapiro.test(Ferets[Name == treatName]))
+
+test <- wilcox.test(HeLa_scr$Ferets, HeLa_siArl8b$Ferets)
+test$p.value
+
+# NumDetections
+with(merged.summary, shapiro.test(NumDetections[Name == controlName]))
+with(merged.summary, shapiro.test(NumDetections[Name == treatName]))
+
+test <- wilcox.test(HeLa_scr$NumDetections, HeLa_siArl8b$NumDetections)
+test$p.value
+

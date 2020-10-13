@@ -53,7 +53,6 @@ dir.create("plots", showWarnings = FALSE)
 name_distance = "organelleDistance.csv"
 name_cell_measure = "cellMeasurements.csv"
 
-
 organelle_distance <- read.csv(name_distance, header = TRUE)
 cell_measure <- read.csv(name_cell_measure, header = TRUE)
 
@@ -64,61 +63,54 @@ cell_column = ncol(cell_measure);
 # background subtraction
 # ==============================================================================
 # data processing
-# filter for feret diameter range
-# background subtraction
-# normalized lysosome distance
-
-# filter for a feret size range
-cellMeasure_filter <- subset(cell_measure, Ferets >= feret_lower & Ferets <= feret_upper)
+cell_measure_filter <- subset(cell_measure, 
+                             Ferets >= feret_lower & Ferets <= feret_upper)
 
 # background subtraction for mean organelle intensity per cell
-cellMeasure_filter$MeanOrgaBackSub <- cellMeasure_filter$MeanValueOrga - cellMeasure_filter$MeanBackgroundOrga
+cell_measure_filter$MeanOrgaBackSub <- cell_measure_filter$MeanValueOrga - cell_measure_filter$MeanBackgroundOrga
 
 if (cell_column == 10 && orga_column == 10) {
   
-  cellMeasure_filter$MeanMeasureBackSub <- cellMeasure_filter$MeanValueMeasure - cellMeasure_filter$MeanBackgroundMeasure
+  cell_measure_filter$MeanMeasureBackSub <- cell_measure_filter$MeanValueMeasure - cell_measure_filter$MeanBackgroundMeasure
   
 }
 
-# merge results
-merge.table <- merge(cellMeasure_filter, organelle_distance, by = c("Name", "Series", "Cell"))
+merge_cell_organelle <- merge(cell_measure_filter, organelle_distance, by = c("Name", "Series", "Cell"))
 
 # background subtraction for detection intensity
-merge.table$PeakDetectBackSub <- merge.table$PeakDetectionInt - merge.table$MeanBackgroundOrga
+merge_cell_organelle$PeakDetectBackSub <- merge_cell_organelle$PeakDetectionInt - merge_cell_organelle$MeanBackgroundOrga
 
 if (cell_column == 10 && orga_column == 10) {
   
-  merge.table$PeakMeasureBackSub <- merge.table$PeakMeasureInt - merge.table$MeanBackgroundMeasure
+  merge_cell_organelle$PeakMeasureBackSub <- merge_cell_organelle$PeakMeasureInt - merge_cell_organelle$MeanBackgroundMeasure
   
 }
 
-# normalized lysosome distance with feret's diameter
-merge.table$DistanceNorm <- merge.table$DistanceCal / merge.table$Ferets
+merge_cell_organelle$DistanceNorm <- merge_cell_organelle$DistanceCal / merge_cell_organelle$Ferets
 
-# calculate mean per cell
-summary.table <- merge.table %>% 
+
+summary_table <- merge_cell_organelle %>% 
   group_by(Name, Series, Cell) %>% 
   summarise(across(DistanceRaw:DistanceNorm, mean, na.rm =TRUE )) %>% 
   rename_at(vars(-Name, -Series, -Cell),function(x) paste0(x,".mean"))
 
-merged.summary <- merge(cellMeasure_filter, summary.table, by = c("Name", "Series", "Cell"))
+merged_summary <- merge(cell_measure_filter, summary_table, by = c("Name", "Series", "Cell"))
 
 # ==============================================================================
 # save processed data
-# merge.table
-write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
-                          "_detection.xlsx", sep = ""), 
-           merge.table, 
+result_path <- file.path(outdir, result_name, fsep = .Platform$file.sep)
+
+write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
+           merge_cell_organelle, 
            sheetName="Sheet1",  
            col.names=TRUE, 
            row.names=TRUE, 
            append=FALSE, 
            showNA=TRUE)
 
-# merged.summary
-write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
-                          "_cell.xlsx", sep = ""), 
-           merged.summary, 
+# merged_summary
+write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
+           merged_summary, 
            sheetName="Sheet1",  
            col.names=TRUE, 
            row.names=TRUE, 
@@ -131,14 +123,14 @@ measure1Title <- list("Average Feret's diameter", "Average cell area", "Number o
 measure1Label <- list("ferets diameter (µm)", "cell area (µm²)", "average count", "fluorescent intensity (A.U.)")
 measure1File <- list("feretPlot", "cellArea", "numDetections", "intPerCellDetection")
 
-cell_measure.long <- cellMeasure_filter %>% pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
+cell_measure.long <- cell_measure_filter %>% pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
 
 for (index in seq_along(measure1)) {
   
   dataSubset <- subset(cell_measure.long, cell_measure.long$name==measure1[index])
   
   plot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
-    geom_boxplot() +
+    geom_boxplot(outlier.size = 2, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
     ggtitle(measure1Title[index]) + 
@@ -151,9 +143,9 @@ for (index in seq_along(measure1)) {
           panel.border = element_blank(),
           panel.background = element_blank(),
           # x axis ticks
-          axis.text.x = element_text(color = "grey20", size = 16, angle = 45, hjust = .5, vjust = .5, face = "plain"),
+          axis.text.x = element_text(color = "grey20", size = 22, angle = 45, hjust = .5, vjust = .5, face = "plain"),
           # y axis ticks
-          axis.text.y = element_text(color = "grey20", size = 15, angle = 0, hjust = 1, vjust = 0, face = "plain"),
+          axis.text.y = element_text(color = "grey20", size = 22, angle = 0, hjust = 1, vjust = 0, face = "plain"),
           # x axis labels
           axis.title.x = element_text(color = "grey20", size = 22, angle = 0, hjust = .5, vjust = 0, face = "plain"),
           # y axis labels
@@ -176,14 +168,14 @@ measure2Title <- list("Average peak detection intensity  (detection channel)", "
 measure2Label <- list("fluorescent intensity (A.U.)", "distance (µm)", "normalized distance")
 measure2File <- list("intPerDetectionDetectionChannel", "distance", "distanceNorm")
 
-summary.long <- summary.table %>% pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, values_to = "measurement" )
+summary.long <- summary_table %>% pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, values_to = "measurement" )
 
 for (index in seq_along(measure2)) {
   
   dataSubset <- subset(summary.long, summary.long$name==measure2[index])
   
   plot <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
-    geom_boxplot() +
+    geom_boxplot(outlier.size = 2, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
     ggtitle(measure2Title[index]) + 
@@ -218,11 +210,11 @@ for (index in seq_along(measure2)) {
 # plot measure channel
 if (cell_column == 10 && orga_column == 10) {
   
-  plot <- ggplot(cellMeasure_filter, aes(x=Name, y=MeanMeasureBackSub)) +
+  plot <- ggplot(cell_measure_filter, aes(x=Name, y=MeanMeasureBackSub)) +
     ggtitle("Average intensity in cell (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
-    geom_boxplot() + 
+    geom_boxplot(outlier.size = 2, outlier.shape = 1) + 
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
     theme_bw() +
@@ -247,11 +239,11 @@ if (cell_column == 10 && orga_column == 10) {
   ggsave(file=paste0(plots, .Platform$file.sep, "intPerCellMeasure", ".pdf"), 
          width = 297, height = 210, units = "mm")
   
-  plot <- ggplot(summary.table, aes(x=Name, y=PeakMeasureBackSub.mean)) +
+  plot <- ggplot(summary_table, aes(x=Name, y=PeakMeasureBackSub.mean)) +
     ggtitle("Average peak detection intensity (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
-    geom_boxplot() + 
+    geom_boxplot(outlier.size = 2, outlier.shape = 1) + 
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
     theme_bw() +
@@ -280,7 +272,7 @@ if (cell_column == 10 && orga_column == 10) {
 
 # ------------------------------------------------------------------------------
 # lysosome density plots
-name.count <- as.data.frame(table(merge.table$Name))
+name.count <- as.data.frame(table(merge_cell_organelle$Name))
 max.list <- list()
 
 # goes through each experiment and calculates lysosome density
@@ -288,7 +280,7 @@ max.list <- list()
 # collects these normalized density plots in max.list
 for (name in name.count$Var1){
   
-  dataPerWell <- subset(merge.table, Name == name)
+  dataPerWell <- subset(merge_cell_organelle, Name == name)
   densityPerWell <- density(dataPerWell$DistanceNorm, 
                             bw = "nrd0", 
                             n = 512, 
@@ -351,7 +343,7 @@ for (name in lysDist.filenames[1]) {
   
   print(">>Start 1")
   # merge cell measurements with intensity profiles
-  merge.table_intensity <- merge(cellMeasure_filter, 
+  merge.table_intensity <- merge(cell_measure_filter, 
                                  intMeasure, 
                                  by = c("Name", "Series", "Cell"))
   
@@ -451,7 +443,7 @@ value.listCollected <- do.call("rbind", value.list)
 head(value.listCollected)
 
 # ------------------------------------------------------------------------------
-# merged.summary
+# merged_summary
 write.xlsx(file = paste0( file.path(outdir, result_name, fsep = .Platform$file.sep),  
                           "_intensityProfile.xlsx", sep = ""), 
            value.listCollected, 
@@ -491,13 +483,13 @@ ggsave(file=paste0(plots, .Platform$file.sep, "intensityProfile_orgaCh", ".pdf")
 controlName = 'HeLa_scr'
 treatName = 'HeLa_siArl8b'
 
-HeLa_scr <- subset(merged.summary, Name == controlName)
-HeLa_siArl8b <- subset(merged.summary, Name == treatName)
+HeLa_scr <- subset(merged_summary, Name == controlName)
+HeLa_siArl8b <- subset(merged_summary, Name == treatName)
 
 # DistanceNorm.mean
 ## Shapiro-Wilk Normality Test - normality of univariante sample
-with(merged.summary, shapiro.test(DistanceNorm.mean[Name == controlName]))
-with(merged.summary, shapiro.test(DistanceNorm.mean[Name == treatName]))
+with(merged_summary, shapiro.test(DistanceNorm.mean[Name == controlName]))
+with(merged_summary, shapiro.test(DistanceNorm.mean[Name == treatName]))
 
 ## if data is normally distributed then perform F-test
 ## f-test checks if both distributions have similar variance
@@ -507,29 +499,29 @@ test <- wilcox.test(HeLa_scr$DistanceNorm.mean, HeLa_siArl8b$DistanceNorm.mean)
 test$p.value
 
 # DistanceCal.mean
-with(merged.summary, shapiro.test(DistanceCal.mean[Name == controlName]))
-with(merged.summary, shapiro.test(DistanceCal.mean[Name == treatName]))
+with(merged_summary, shapiro.test(DistanceCal.mean[Name == controlName]))
+with(merged_summary, shapiro.test(DistanceCal.mean[Name == treatName]))
 
 test <- wilcox.test(HeLa_scr$DistanceCal.mean, HeLa_siArl8b$DistanceCal.mean)
 test$p.value
 
 # CellArea
-with(merged.summary, shapiro.test(CellArea[Name == controlName]))
-with(merged.summary, shapiro.test(CellArea[Name == treatName]))
+with(merged_summary, shapiro.test(CellArea[Name == controlName]))
+with(merged_summary, shapiro.test(CellArea[Name == treatName]))
 
 test <- wilcox.test(HeLa_scr$CellArea, HeLa_siArl8b$CellArea)
 test$p.value
 
 # Ferets
-with(merged.summary, shapiro.test(Ferets[Name == controlName]))
-with(merged.summary, shapiro.test(Ferets[Name == treatName]))
+with(merged_summary, shapiro.test(Ferets[Name == controlName]))
+with(merged_summary, shapiro.test(Ferets[Name == treatName]))
 
 test <- wilcox.test(HeLa_scr$Ferets, HeLa_siArl8b$Ferets)
 test$p.value
 
 # NumDetections
-with(merged.summary, shapiro.test(NumDetections[Name == controlName]))
-with(merged.summary, shapiro.test(NumDetections[Name == treatName]))
+with(merged_summary, shapiro.test(NumDetections[Name == controlName]))
+with(merged_summary, shapiro.test(NumDetections[Name == treatName]))
 
 test <- wilcox.test(HeLa_scr$NumDetections, HeLa_siArl8b$NumDetections)
 test$p.value

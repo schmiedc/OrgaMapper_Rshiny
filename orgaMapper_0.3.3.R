@@ -294,43 +294,43 @@ if (cell_column == 10 && orga_column == 10) {
 
 # ------------------------------------------------------------------------------
 # lysosome density plots
-name.count <- as.data.frame(table(merge_cell_organelle$Name))
-max.list <- list()
+name_count <- as.data.frame(table(merge_cell_organelle$Name))
+detect_list <- list()
 
 # goes through each experiment and calculates lysosome density
 # then peak normalizes the lysosome density
-# collects these normalized density plots in max.list
-for (name in name.count$Var1){
+# collects these normalized density plots in detect_list
+for (name in name_count$Var1){
   
-  dataPerWell <- subset(merge_cell_organelle, Name == name)
-  densityPerWell <- density(dataPerWell$DistanceNorm, 
+  data_per_name <- subset(merge_cell_organelle, Name == name)
+  density_per_name <- density(data_per_name$DistanceNorm, 
                             bw = "nrd0", 
                             n = 512, 
                             from = 0, 
                             to = norm_distance_nucleus)
   
-  dataframe <- data.frame(densityPerWell$x)
-  dataframe$y <- densityPerWell$y
-  colnames(dataframe)[1] <- "x"
+  data_frame <- data.frame(density_per_name$x)
+  dataframe$y <- density_per_name$y
+  colnames(data_frame)[1] <- "x"
   
   # peak normalisation
-  max = max(dataframe$y, na.rm = FALSE)
-  dataframe$peak_norm <- sapply(dataframe$y, function(x){x /  max})
-  max.list[[name]] <- dataframe
+  max = max(data_frame$y, na.rm = FALSE)
+  data_frame$peak_norm <- sapply(data_frame$y, function(x){x /  max})
+  detect_list[[name]] <- data_frame
   
 }
 
 # binds collection of normalized density plots and binds them into one dataframe
-norm.list <- do.call("rbind", max.list)
-norm.list1 <- tibble::rownames_to_column(norm.list, "nameindex")
-norm.list1.indices <- str_split_fixed(norm.list1$nameindex, "\\.", 2)
-norm.list2 <- cbind(norm.list1.indices, norm.list1)
-colnames(norm.list2)[1] <- "name"
-colnames(norm.list2)[2] <- "index"
+norm_list <- do.call("rbind", detect_list)
+norm_list1 <- tibble::rownames_to_column(norm_list, "nameindex")
+norm_list1_indices <- str_split_fixed(norm_list1$nameindex, "\\.", 2)
+norm_list2 <- cbind(norm_list1_indices, norm_list1)
+colnames(norm_list2)[1] <- "name"
+colnames(norm_list2)[2] <- "index"
 
 # Plot Lysosome density vs normalized distance from Nucleus
 # density plots with peak normalized data
-plot <- ggplot(norm.list2, aes(x = x, y = peak_norm, group = name, color = name)) + 
+plot <- ggplot(norm_list2, aes(x = x, y = peak_norm, group = name, color = name)) + 
   geom_line() +
   #theme_bw(base_size = 20) +
   xlab("Normalized distance from Nucleus") +

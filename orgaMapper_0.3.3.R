@@ -2,6 +2,7 @@ library(ggplot2)
 library(gridExtra)
 library(tidyverse)
 library("openxlsx")
+library(data.table)
 # ==============================================================================
 #
 #  DESCRIPTION: Analysis script for OrgaMapper
@@ -377,7 +378,10 @@ colnames(norm_list2)[2] <- "index"
 
 # Plot Lysosome density vs normalized distance from Nucleus
 # density plots with peak normalized data
-plot <- ggplot(norm_list2, aes(x = x, y = peak_norm, group = name, color = name)) + 
+plot <- ggplot(norm_list2, aes(x = x, 
+                               y = peak_norm, 
+                               group = name, 
+                               color = name)) + 
   geom_line() +
   xlab("Normalized distance from Nucleus") +
   ylab("Lysosome density (peak norm)") +
@@ -393,127 +397,124 @@ ggsave(file=paste0(plots, .Platform$file.sep, "idensityPlot", ".pdf"),
        width = 297, height = 210, units = "mm")
 
 # ==============================================================================
+head(merge_cell_organelle)
+head(merged_summary)
+
+# ==============================================================================
+# binning needs to be automatic!
+# or different method for binning
+upper_limit_norm = 1
+bin_width_norm = 0.05
+
+upper_limit = 75
+bin_width = 2
+
 # get value distances for each image
-nameIntMeas = "intDistance.csv"
-lysDist.filenames <- list.files(recursive=TRUE, pattern=nameIntMeas,full.names = TRUE)
-head(lysDist.filenames)
-value.list <- list()
+name_value_measure = "intDistance.csv"
+value_filenames <- list.files(recursive=TRUE, 
+                                pattern=name_value_measure,full.names = TRUE)
 
-head(merge.table_intensity)
-
-intMeasure <- read.csv(lysDist.filenames[1], header = TRUE)
-head(intMeasure)
-
-for (name in lysDist.filenames[1]) {
+# creates binned data
+bin_distance_values <- function(bin, value, variable_name, bin_width, upper_limit) {
   
-  intMeasure <- read.csv(name, header = TRUE)
-  intColumn = ncol(intMeasure)
-  
-  print(">>Start 1")
-  # merge cell measurements with intensity profiles
-  merge.table_intensity <- merge(cell_measure_filter, 
-                                 intMeasure, 
-                                 by = c("Name", "Series", "Cell"))
-  
-  # distance normalization
-  merge.table_intensity$DistanceNorm <- merge.table_intensity$DistanceCal / merge.table_intensity$Ferets
-  
-  # background subtraction for detection intensity
-  merge.table_intensity$orgaIntBackSub <- merge.table_intensity$orgaInt - merge.table_intensity$MeanBackgroundOrga
-  
-  if (cell_column == 10 && intColumn == 9) {
-    
-    merge.table_intensity$measureIntBackSub <- merge.table_intensity$measureInt - merge.table_intensity$MeanBackgroundMeasure
-    
-  }
-  
-  head(merge.table_intensity)
-  
-  # calculate mean intensity over bins with fixed width between 0 and 0.1
-  orga <- tapply(merge.table_intensity$orgaInt, 
-                 cut(merge.table_intensity$DistanceCal, 
-                     seq(0, 0.1, by=0.005)), mean)
-  
-  head(orga)
+  output_apply <- tapply(value, 
+                         cut(bin, seq(0, upper_limit, by=bin_width)), 
+                         mean)
   
   # transform output of tapply to data frame
-  orga1 <- as.data.frame(as.table(orga))
-  colnames(orga1) <- c("bin", "mean_orga")
-  
-  
-  
-  print(">>Start 2")
-  # cleanup data frame
-  orga1$bin <- str_remove_all(orga1$bin, "[]\\(]")
-  orga1$bin <- str_replace(orga1$bin, ",", "-")
-  
-  # calculate mean intensity over bins with fixed width between 0 and 0.1
-  orga_norm <- tapply(merge.table_intensity$orgaIntBackSub, 
-                      cut(merge.table_intensity$DistanceNorm, 
-                          seq(0, 0.1, by=0.005)), mean)
-  
-  # transform output of tapply to data frame
-  orga_norm1 <- as.data.frame(as.table(orga_norm))
-  colnames(orga_norm1) <- c("bin", "mean_orga_norm")
+  binned_values <- as.data.frame(as.table(output_apply))
+  colnames(binned_values) <- c("bin", variable_name)
   
   # cleanup data frame
-  orga_norm1$bin <- str_remove_all(orga_norm1$bin, "[]\\(]")
-  orga_norm1$bin <- str_replace(orga_norm1$bin, ",", "-")
+  binned_values$bin <- str_remove_all(binned_values$bin, "[]\\(]")
+  binned_values$bin <- str_replace(binned_values$bin, ",", "-")
   
-  # remerge with name and other data 
-  value_result <- merge (orga1, orga_norm1, by = "bin")
+  binned_values <- binned_values %>% mutate(row = row_number())
   
-  if (cell_column == 10 && intColumn == 9) {
-    
-    print(">>Start 3")
-    # calculate mean intensity over bins with fixed width between 0 and 0.1
-    measure <- tapply(merge.table_intensity$measureInt, 
-                      cut(merge.table_intensity$DistanceCal, 
-                          seq(0, 0.1, by=0.005)), mean)
-    
-    # transform output of tapply to data frame
-    measure1 <- as.data.frame(as.table(measure))
-    colnames(measure1) <- c("bin", "mean_measure")
-    
-    # cleanup data frame
-    measure1$bin <- str_remove_all(measure1$bin, "[]\\(]")
-    measure1$bin <- str_replace(measure1$bin, ",", "-")
-    
-    print(">>Start 4")
-    # calculate mean intensity over bins with fixed width between 0 and 0.1
-    measure_norm <- tapply(merge.table_intensity$measureIntBackSub, 
-                           cut(merge.table_intensity$DistanceNorm, 
-                               seq(0, 0.1, by=0.005)), mean)
-    
-    # transform output of tapply to data frame
-    measure_norm1 <- as.data.frame(as.table(measure_norm))
-    colnames(measure_norm1) <- c("bin", "mean_measure_norm")
-    
-    # cleanup data frame
-    measure_norm1$bin <- str_remove_all(measure_norm1$bin, "[]\\(]")
-    measure_norm1$bin <- str_replace(measure_norm1$bin, ",", "-")
-    
-    # remerge with name and other data 
-    measure_result <- merge(measure1, measure_norm1, by = "bin")
-    value_result <- merge(value_result, measure_result, by = "bin")
-    
-  }
-  
-  table.info <- merge.table_intensity[1,1:12]
-  value_result2 <- merge(table.info, value_result, by=NULL)
-  
-  value.list[[name]] <- value_result2
+  return(binned_values)
   
 }
 
-# binds collection of normalized density plots and binds them into one dataframe
-value.listCollected <- do.call("rbind", value.list)
-head(value.listCollected)
+value_list_norm <- list()
+value_list <- list()
+for (name in value_filenames) {
+  
+  value_measure  <- read.csv(name, header = TRUE)
+  value_column = ncol(value_measure )
+  
+  # merge cell measurements with intensity profiles
+  merge_table_value <- merge(cell_measure_filter, 
+                                 value_measure , 
+                                 by = c("Name", "Series", "Cell"))
+  
+  # distance normalization
+  merge_table_value$DistanceNorm <- merge_table_value$DistanceCal / merge_table_value$Ferets
+  
+  # background subtraction for detection intensity
+  merge_table_value$orgaIntBackSub <- merge_table_value$orgaInt - merge_table_value$MeanBackgroundOrga
+  
+  if (cell_column == 10 && value_column == 9) {
+    
+    merge_table_value$measureIntBackSub <- merge_table_value$measureInt - merge_table_value$MeanBackgroundMeasure
+    
+  }
+  
+  binned_orga_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
+                                                merge_table_value$orgaIntBackSub, 
+                                                "mean_orga_norm",
+                                                bin_width_norm,
+                                                upper_limit_norm)
+  
+  binned_orga_value <- bin_distance_values(merge_table_value$DistanceCal, 
+                                           merge_table_value$orgaIntBackSub, 
+                                           "mean_orga",
+                                           bin_width,
+                                           upper_limit)
+  
+  if (cell_column == 10 && value_column == 9) {
+    
+    binned_measure_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
+                                                  merge_table_value$measureIntBackSub, 
+                                                  "mean_measure_norm",
+                                                  bin_width_norm,
+                                                  upper_limit_norm)
+    
+    binned_measure_value <- bin_distance_values(merge_table_value$DistanceCal, 
+                                             merge_table_value$measureIntBackSub, 
+                                             "mean_measure",
+                                             bin_width,
+                                             upper_limit)
+    
+    
+    measure_result_norm <- merge(binned_orga_value_norm, binned_measure_value_norm, by = c("bin","row"))
+    measure_result <- merge(binned_orga_value, binned_measure_value, by = c("bin","row"))
+    
+  }
+  
+  table.info <- merge_table_value[1,1:12]
+  value_result_norm <- merge(table.info, measure_result_norm, by=NULL)
+  value_result<- merge(table.info, measure_result, by=NULL)
+  
+  value_list_norm[[name]] <- value_result_norm
+  value_list[[name]] <- value_result
+  
+}
+
+# binds collection 
+value_list_norm_coll <- do.call("rbind", value_list_norm)
+value_list_coll <- do.call("rbind", value_list)
 
 # ------------------------------------------------------------------------------
-# merged_summary
+write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
+           value_list_norm_coll, 
+           sheetName="Sheet1",  
+           col.names=TRUE, 
+           row.names=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
 write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
-           value.listCollected, 
+           value_list_coll, 
            sheetName="Sheet1",  
            col.names=TRUE, 
            row.names=TRUE, 
@@ -521,44 +522,45 @@ write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""),
            showNA=TRUE)
 
 # ------------------------------------------------------------------------------
-head(value.listCollected)
-
-# calculate mean per cell
-summary.intensity <- value.listCollected %>% 
+# calculate mean per cell for normalized data
+summary.intensity <- value_list_norm_coll %>% 
   group_by(Name, bin) %>% 
-  summarise(across(mean_intensity, mean, na.rm =TRUE ))
+  summarise(across(mean_orga_norm, mean, na.rm =TRUE ))
 
-head(summary.intensity)
-
-plot <- ggplot(data=summary.intensity, aes(x=bin, y=mean_intensity, group=Name)) +
+plot <- ggplot(data=summary.intensity, aes(x=bin, y=mean_orga_norm, group=Name)) +
   geom_line(aes(color=Name)) +
   geom_point(aes(color=Name)) +
-  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
   xlab("Normalized distance from Nucleus") +
   ylab("Fluorescent intensity (A.U.)") +
-  ggtitle("Intensity profile")
+  ggtitle("Intensity profile organelle Channel") +
+  lineplot_theme() + 
+  aes(x = fct_inorder(bin)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+print(plot)
+
+ggsave(file=paste0(plots, .Platform$file.sep, "NormIntensityProfile_orgaCh", ".pdf"), 
+       width = 297, height = 210, units = "mm")
+
+
+# calculate mean per cell for normalized data
+summary.intensity <- value_list_coll %>% 
+  group_by(Name, bin, row) %>% 
+  summarise(across(mean_orga, mean, na.rm =TRUE ))
+
+plot <- ggplot(data=summary.intensity, aes(x=reorder(bin,row), y=mean_orga, group=Name)) +
+  geom_line(aes(color=Name)) +
+  geom_point(aes(color=Name)) +
+  ylab("Fluorescent intensity (A.U.)") +
+  ggtitle("Intensity profile organelle Channel") +
+  lineplot_theme() +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+  xlab("Distance from Nucleus (µm)") 
 
 print(plot)
 
 ggsave(file=paste0(plots, .Platform$file.sep, "intensityProfile_orgaCh", ".pdf"), 
        width = 297, height = 210, units = "mm")
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 # ==============================================================================
 # Statistical analysis

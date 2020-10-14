@@ -393,7 +393,7 @@ plot <- ggplot(norm_list2, aes(x = x,
 
 print(plot)
 
-ggsave(file=paste0(plots, .Platform$file.sep, "idensityPlot", ".pdf"), 
+ggsave(file=paste0(plots, .Platform$file.sep, "densityPlot", ".pdf"), 
        width = 297, height = 210, units = "mm")
 
 # ==============================================================================

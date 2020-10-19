@@ -1,8 +1,8 @@
 library(ggplot2)
-library(gridExtra)
 library(tidyverse)
 library("openxlsx")
 library(data.table)
+library(gridExtra)
 # ==============================================================================
 #
 #  DESCRIPTION: Analysis script for OrgaMapper
@@ -20,7 +20,7 @@ library(data.table)
 # DEPENDENCIES:
 #
 #
-#      VERSION: 0.3.3
+#      VERSION: 0.3.4
 #      CREATED: 2020-07-28
 #     REVISION: 2020-10-12
 #
@@ -459,13 +459,13 @@ for (name in value_filenames) {
     
   }
   
-  binned_orga_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
+  value_result_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                 merge_table_value$orgaIntBackSub, 
                                                 "mean_orga_norm",
                                                 bin_width_norm,
                                                 upper_limit_norm)
   
-  binned_orga_value <- bin_distance_values(merge_table_value$DistanceCal, 
+  value_result <- bin_distance_values(merge_table_value$DistanceCal, 
                                            merge_table_value$orgaIntBackSub, 
                                            "mean_orga",
                                            bin_width,
@@ -486,14 +486,14 @@ for (name in value_filenames) {
                                              upper_limit)
     
     
-    measure_result_norm <- merge(binned_orga_value_norm, binned_measure_value_norm, by = c("bin","row"))
-    measure_result <- merge(binned_orga_value, binned_measure_value, by = c("bin","row"))
+    value_result_norm <- merge(value_result_norm, binned_measure_value_norm, by = c("bin","row"))
+    value_result <- merge(value_result, binned_measure_value, by = c("bin","row"))
     
   }
   
   table.info <- merge_table_value[1,1:12]
-  value_result_norm <- merge(table.info, measure_result_norm, by=NULL)
-  value_result<- merge(table.info, measure_result, by=NULL)
+  value_result_norm <- merge(table.info, value_result_norm, by=NULL)
+  value_result<- merge(table.info, value_result, by=NULL)
   
   value_list_norm[[name]] <- value_result_norm
   value_list[[name]] <- value_result

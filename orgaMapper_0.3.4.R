@@ -19,7 +19,7 @@ library(gridExtra)
 #        NOTES: 
 # DEPENDENCIES:
 #
-#      VERSION: 0.3.4
+#      VERSION: 0.4.0
 #      CREATED: 2020-07-28
 #     REVISION: 2020-10-12
 #

@@ -320,7 +320,88 @@ for (index in seq_along(measure1)) {
   
 }
 
+# ------------------------------------------------------------------------------
+# lysosome density plots
 
+plot_list_detection <- list()
+
+name_count <- as.data.frame(table(merge_cell_organelle$Name))
+detect_list <- list()
+
+# goes through each experiment and calculates lysosome density
+# then peak normalizes the lysosome density
+# collects these normalized density plots in detect_list
+for (name in name_count$Var1){
+  
+  data_per_name <- subset(merge_cell_organelle, Name == name)
+  density_per_name <- density(data_per_name$DistanceNorm, 
+                              bw = "nrd0", 
+                              n = 512, 
+                              from = 0, 
+                              to = norm_distance_nucleus)
+  
+  data_frame <- data.frame(density_per_name$x)
+  data_frame$y <- density_per_name$y
+  colnames(data_frame)[1] <-  "x"
+  
+  # peak normalisation
+  max = max(data_frame$y, na.rm = FALSE)
+  data_frame$peak_norm <- sapply(data_frame$y, function(x){x /  max})
+  detect_list[[name]] <- data_frame
+  
+}
+
+# binds collection of normalized density plots and binds them into one dataframe
+norm_list <- do.call("rbind", detect_list)
+norm_list1 <- tibble::rownames_to_column(norm_list, "nameindex")
+norm_list1_indices <- str_split_fixed(norm_list1$nameindex, "\\.", 2)
+norm_list2 <- cbind(norm_list1_indices, norm_list1)
+colnames(norm_list2)[1] <- "name"
+colnames(norm_list2)[2] <- "index"
+
+# Plot Lysosome density vs normalized distance from Nucleus
+# density plots without peak normalized data
+plot_density_raw <- ggplot(norm_list2, aes(x = x, 
+                                           y = y, 
+                                           group = name, 
+                                           color = name)) + 
+  geom_line() +
+  xlab("Normalized distance from Nucleus") +
+  ylab("Lysosome density (peak norm)") +
+  ggtitle("Raw density plots") +
+  scale_x_continuous(expand = c(0, 0)) + # force start at 0
+  scale_y_continuous(expand = c(0, 0)) + # force start at 0
+  lineplot_theme()
+
+ggsave(plot = plot_density_raw,
+       file=paste0(plots, .Platform$file.sep, "raw_densityPlot", ".pdf"), 
+       width = 297, 
+       height = 210, 
+       units = "mm")
+
+plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_raw
+
+# Plot Lysosome density vs normalized distance from Nucleus
+# density plots with peak normalized data
+plot_density <- ggplot(norm_list2, aes(x = x, 
+                                       y = peak_norm, 
+                                       group = name, 
+                                       color = name)) + 
+  geom_line() +
+  xlab("Normalized distance from Nucleus") +
+  ylab("Lysosome density (peak norm)") +
+  ggtitle("Peak normalized density plots") +
+  scale_x_continuous(expand = c(0, 0)) + # force start at 0
+  scale_y_continuous(expand = c(0, 0)) + # force start at 0
+  lineplot_theme()
+
+ggsave(plot = plot_density,
+       file=paste0(plots, .Platform$file.sep, "densityPlot", ".pdf"), 
+       width = 297, 
+       height = 210, 
+       units = "mm")
+
+plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density
 
 # ------------------------------------------------------------------------------
 # plot distance and detection intensity
@@ -357,7 +438,6 @@ summary_long <- summary_table %>%
   pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, 
                values_to = "measurement" )
 
-plot_list_detection <- list()
 
 for (index in seq_along(measure2)) {
   
@@ -372,7 +452,7 @@ for (index in seq_along(measure2)) {
     ylab(measure2_label[index]) +
     boxplot_theme()
   
-  plot_list_detection[[index]] <- plot_detection
+  plot_list_detection[[length(plot_list_detection) + 1]] <- plot_detection
   
   ggsave(plot = plot_detection, 
          file=paste0(plots, .Platform$file.sep, measure2_file[index], ".pdf"), 
@@ -449,86 +529,6 @@ if (cell_column == 10 && orga_column == 10) {
          units = "mm")
   
 }
-
-# ------------------------------------------------------------------------------
-# lysosome density plots
-name_count <- as.data.frame(table(merge_cell_organelle$Name))
-detect_list <- list()
-
-# goes through each experiment and calculates lysosome density
-# then peak normalizes the lysosome density
-# collects these normalized density plots in detect_list
-for (name in name_count$Var1){
-  
-  data_per_name <- subset(merge_cell_organelle, Name == name)
-  density_per_name <- density(data_per_name$DistanceNorm, 
-                            bw = "nrd0", 
-                            n = 512, 
-                            from = 0, 
-                            to = norm_distance_nucleus)
-  
-  data_frame <- data.frame(density_per_name$x)
-  data_frame$y <- density_per_name$y
-  colnames(data_frame)[1] <- "x"
-  
-  # peak normalisation
-  max = max(data_frame$y, na.rm = FALSE)
-  data_frame$peak_norm <- sapply(data_frame$y, function(x){x /  max})
-  detect_list[[name]] <- data_frame
-  
-}
-
-# binds collection of normalized density plots and binds them into one dataframe
-norm_list <- do.call("rbind", detect_list)
-norm_list1 <- tibble::rownames_to_column(norm_list, "nameindex")
-norm_list1_indices <- str_split_fixed(norm_list1$nameindex, "\\.", 2)
-norm_list2 <- cbind(norm_list1_indices, norm_list1)
-colnames(norm_list2)[1] <- "name"
-colnames(norm_list2)[2] <- "index"
-
-# Plot Lysosome density vs normalized distance from Nucleus
-# density plots without peak normalized data
-plot_density_raw <- ggplot(norm_list2, aes(x = x, 
-                                       y = y, 
-                                       group = name, 
-                                       color = name)) + 
-  geom_line() +
-  xlab("Normalized distance from Nucleus") +
-  ylab("Lysosome density (peak norm)") +
-  ggtitle("Raw density plots") +
-  scale_x_continuous(expand = c(0, 0)) + # force start at 0
-  scale_y_continuous(expand = c(0, 0)) + # force start at 0
-  lineplot_theme()
-
-ggsave(plot = plot_density_raw,
-       file=paste0(plots, .Platform$file.sep, "raw_densityPlot", ".pdf"), 
-       width = 297, 
-       height = 210, 
-       units = "mm")
-
-plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_raw
-
-# Plot Lysosome density vs normalized distance from Nucleus
-# density plots with peak normalized data
-plot_density <- ggplot(norm_list2, aes(x = x, 
-                               y = peak_norm, 
-                               group = name, 
-                               color = name)) + 
-  geom_line() +
-  xlab("Normalized distance from Nucleus") +
-  ylab("Lysosome density (peak norm)") +
-  ggtitle("Peak normalized density plots") +
-  scale_x_continuous(expand = c(0, 0)) + # force start at 0
-  scale_y_continuous(expand = c(0, 0)) + # force start at 0
-  lineplot_theme()
-
-ggsave(plot = plot_density,
-       file=paste0(plots, .Platform$file.sep, "densityPlot", ".pdf"), 
-       width = 297, 
-       height = 210, 
-       units = "mm")
-
-plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density
 
 # ==============================================================================
 # print plots to grid

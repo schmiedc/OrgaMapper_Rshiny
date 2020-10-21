@@ -44,7 +44,7 @@ single_series = FALSE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
-background_subtract_plots = FALSE
+plot_background_subtract = FALSE
 
 # analyze signal profiles
 analyze_signal_profiles = FALSE
@@ -262,13 +262,13 @@ lineplot_theme <- function() {
 # plots area, number of detections and mean value
 organelle_intensity_cell = ""
 
-if (background_subtract_plots) {
+if (plot_background_subtract) {
   
-  organelle_intensity_cell = "MeanValueOrga"
+  organelle_intensity_cell = "MeanOrgaBackSub"
   
 } else {
   
-  organelle_intensity_cell = "MeanOrgaBackSub"
+  organelle_intensity_cell = "MeanValueOrga"
   
 }
 
@@ -327,19 +327,19 @@ for (index in seq_along(measure1)) {
 head(summary_table)
 organelle_intensity_cell = ""
 
-if (background_subtract_plots) {
+if (plot_background_subtract) {
   
-  organelle_intensity_cell = "PeakDetectionInt.mean"
+  organelle_intensity_peak = "PeakDetectBackSub.mean"
   
 } else {
   
-  organelle_intensity_cell = "PeakDetectBackSub.mean"
+  organelle_intensity_peak = "PeakDetectionInt.mean"
   
 }
 
 measure2 <- list("DistanceCal.mean", 
                  "DistanceNorm.mean",
-                 "PeakDetectBackSub.mean")
+                 organelle_intensity_peak)
 
 measure2_title <- list("Average distance from nucleus", 
                        "Average normalized distance from nucleus",
@@ -385,9 +385,30 @@ for (index in seq_along(measure2)) {
 
 # ------------------------------------------------------------------------------
 # plot measure channel
+
+measure_intensity_cell = ""
+measure_intensity_peak = ""
+
 if (cell_column == 10 && orga_column == 10) {
   
-  plot_cell_measure <- ggplot(cell_measure_filter, aes(x=Name, y=MeanMeasureBackSub)) +
+  if (plot_background_subtract) {
+    
+    measure_intensity_cell = "MeanMeasureBackSub"
+    measure_intensity_peak = "PeakMeasureBackSub.mean"
+    
+  } else {
+    
+    measure_intensity_cell = "MeanValueMeasure"
+    measure_intensity_peak = "PeakMeasureInt.mean"
+    
+  }
+  
+  head(cell_measure_filter)
+  
+  cell_measure_filter_new <- cell_measure_filter[c("Name", measure_intensity_cell)]
+  colnames(cell_measure_filter_new)[2] <- "measure"
+  
+  plot_cell_measure <- ggplot(cell_measure_filter_new, aes(x=Name, y=measure)) +
     ggtitle("Average intensity in cell (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
@@ -404,7 +425,10 @@ if (cell_column == 10 && orga_column == 10) {
          height = 210, 
          units = "mm")
   
-  plot_peak_measure <- ggplot(summary_table, aes(x=Name, y=PeakMeasureBackSub.mean)) +
+  summary_table_new <- summary_table[c("Name", measure_intensity_peak)]
+  colnames(summary_table_new)[2] <- "measure"
+  
+  plot_peak_measure <- ggplot(summary_table_new, aes(x=Name, y=measure)) +
     ggtitle("Average peak detection intensity (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
@@ -461,6 +485,28 @@ norm_list1_indices <- str_split_fixed(norm_list1$nameindex, "\\.", 2)
 norm_list2 <- cbind(norm_list1_indices, norm_list1)
 colnames(norm_list2)[1] <- "name"
 colnames(norm_list2)[2] <- "index"
+
+# Plot Lysosome density vs normalized distance from Nucleus
+# density plots without peak normalized data
+plot_density_raw <- ggplot(norm_list2, aes(x = x, 
+                                       y = y, 
+                                       group = name, 
+                                       color = name)) + 
+  geom_line() +
+  xlab("Normalized distance from Nucleus") +
+  ylab("Lysosome density (peak norm)") +
+  ggtitle("Raw density plots") +
+  scale_x_continuous(expand = c(0, 0)) + # force start at 0
+  scale_y_continuous(expand = c(0, 0)) + # force start at 0
+  lineplot_theme()
+
+ggsave(plot = plot_density_raw,
+       file=paste0(plots, .Platform$file.sep, "raw_densityPlot", ".pdf"), 
+       width = 297, 
+       height = 210, 
+       units = "mm")
+
+plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_raw
 
 # Plot Lysosome density vs normalized distance from Nucleus
 # density plots with peak normalized data

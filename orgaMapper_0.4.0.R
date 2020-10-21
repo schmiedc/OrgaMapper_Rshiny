@@ -19,7 +19,7 @@ library(gridExtra)
 #        NOTES: 
 # DEPENDENCIES:
 #
-#      VERSION: 0.4.0
+#      VERSION: 0.4.1
 #      CREATED: 2020-07-28
 #     REVISION: 2020-10-12
 #
@@ -699,7 +699,7 @@ if (analyze_signal_profiles) {
              showNA=TRUE)
   
   # ----------------------------------------------------------------------------
-  # plot intensity profiles
+  # plot intensity profiles organelle channel
   # ----------------------------------------------------------------------------
   intensity_profile_plotlist <- list()
   
@@ -809,5 +809,123 @@ if (analyze_signal_profiles) {
   intensity_profile_plotlist[[length(intensity_profile_plotlist) + 1 ]] <- plot_profile_peak
   
   do.call(grid.arrange, intensity_profile_plotlist)
+  
+  head(value_list_norm_coll)
+  head(value_list_coll)
+  # ----------------------------------------------------------------------------
+  # plot intensity profiles measure channel
+  # ----------------------------------------------------------------------------
+  if (cell_column == 10 && value_column == 9) {
+    
+    intensity_profile_plotlist_meas <- list()
+    
+    summary_value_norm_meas <- data.frame(Date=as.Date(character()),
+                                          File=character(), 
+                                          User=character(), 
+                                          stringsAsFactors=FALSE) 
+    
+    summary_value_meas <- data.frame(Date=as.Date(character()),
+                                     File=character(), 
+                                     User=character(), 
+                                     stringsAsFactors=FALSE) 
+    
+    if (plot_background_subtract) {
+      
+      summary_value_norm_meas <- value_list_norm_coll %>% 
+        group_by(Name, bin) %>% 
+        summarise(across(backsub_bin_measure_norm, mean, na.rm =TRUE ))
+      
+      summary_value_meas <- value_list_coll %>% 
+        group_by(Name, bin, row) %>% 
+        summarise(across(backsub_bin_measure, mean, na.rm =TRUE ))
+      
+    } else {
+      
+      summary_value_norm_meas <- value_list_norm_coll %>% 
+        group_by(Name, bin) %>% 
+        summarise(across(raw_bin_measure_norm, mean, na.rm =TRUE ))
+      
+      summary_value_meas <- value_list_coll %>% 
+        group_by(Name, bin, row) %>% 
+        summarise(across(raw_bin_measure, mean, na.rm =TRUE ))
+      
+    }
+    
+    names(summary_value_norm_meas)[3] <- "value"
+    names(summary_value_meas)[4] <- "value"
+    
+    # calculate mean per cell for raw data
+    plot_profile_meas <- ggplot(data=summary_value_meas, aes(x=reorder(bin,row), y=value, group=Name)) +
+      geom_line(aes(color=Name)) +
+      geom_point(aes(color=Name)) +
+      lineplot_theme() +
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+      ylab("Fluorescent intensity (A.U.)") +
+      ggtitle("Intensity profile measure Channel") +
+      xlab("Distance from Nucleus (µm)") 
+    
+    ggsave(plot = plot_profile_meas,
+           file=paste0(plots, .Platform$file.sep, "intensityProfile_measCh", ".pdf"), 
+           width = 297, 
+           height = 210, 
+           units = "mm")
+    
+    intensity_profile_plotlist_meas[[length(intensity_profile_plotlist_meas) + 1 ]] <- plot_profile_meas
+    # calculate mean per cell for normalized data
+    
+    plot_profile_norm_meas <- ggplot(data=summary_value_norm_meas, aes(x=bin, y=value, group=Name)) +
+      geom_line(aes(color=Name)) +
+      geom_point(aes(color=Name)) +
+      lineplot_theme() + 
+      aes(x = fct_inorder(bin)) + 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+      ylab("Fluorescent intensity (A.U.)") +
+      xlab("Normalized distance from Nucleus") +
+      ggtitle("Intensity profile measure Channel")
+    
+    ggsave(plot = plot_profile_norm_meas,
+           file=paste0(plots, .Platform$file.sep, "NormIntensityProfile_measCh", ".pdf"), 
+           width = 297, 
+           height = 210, 
+           units = "mm")
+    
+    intensity_profile_plotlist_meas[[length(intensity_profile_plotlist_meas) + 1 ]] <- plot_profile_norm_meas
+    
+    # peak normalisation
+    name_count_value <- as.data.frame(table(summary_value_norm_meas$Name))
+    value_list <- list()
+    
+    for (name in name_count_value$Var1){
+      
+      data_per_name <- subset(summary_value_norm_meas, Name == name)
+      max_value_profiles = max(data_per_name$value, na.rm = TRUE)
+      data_per_name$peak_norm <- sapply(data_per_name$value, function(x){x /  max_value_profiles})
+      
+      value_list[[name]] <- data_per_name
+    }
+    # binds collection of normalized value plots and binds them into one dataframe
+    norm_list_value <- do.call("rbind", value_list)
+    
+    plot_profile_peak_meas <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=Name)) +
+      geom_line(aes(color=Name)) +
+      geom_point(aes(color=Name)) +
+      lineplot_theme() + 
+      aes(x = fct_inorder(bin)) + 
+      theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+      ylab("Normalized fluorescent intensity") +
+      xlab("Normalized distance from Nucleus") +
+      ggtitle("Peak normalized intensity profile measure Channel")
+    
+    ggsave(plot = plot_profile_peak_meas,
+           file=paste0(plots, .Platform$file.sep, "PeakNormIntensityProfile_measCh", ".pdf"), 
+           width = 297, 
+           height = 210, 
+           units = "mm")
+    
+    intensity_profile_plotlist_meas[[length(intensity_profile_plotlist_meas) + 1 ]] <- plot_profile_peak_meas
+    
+    do.call(grid.arrange, intensity_profile_plotlist_meas)
+    
+  }
 
 }

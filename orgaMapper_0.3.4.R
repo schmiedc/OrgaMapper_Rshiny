@@ -44,7 +44,7 @@ single_series = FALSE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
-plot_background_subtract = FALSE
+plot_background_subtract = TRUE
 
 # analyze signal profiles
 analyze_signal_profiles = TRUE
@@ -570,6 +570,7 @@ if (analyze_signal_profiles) {
   
   value_list_norm <- list()
   value_list <- list()
+  
   for (name in value_filenames) {
     
     value_measure  <- read.csv(name, header = TRUE)
@@ -607,33 +608,61 @@ if (analyze_signal_profiles) {
     
     value_result_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                   merge_table_value$orgaIntBackSub, 
-                                                  "mean_orga_norm",
+                                                  "backsub_bin_orga_norm",
                                                   bin_width_norm,
                                                   upper_limit_norm)
     
     value_result <- bin_distance_values(merge_table_value$DistanceCal, 
                                              merge_table_value$orgaIntBackSub, 
-                                             "mean_orga",
+                                             "backsub_bin_orga",
                                              bin_width,
                                              upper_limit)
+    
+    value_result_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
+                                                 merge_table_value$orgaInt, 
+                                                 "raw_bin_orga_norm",
+                                                 bin_width_norm,
+                                                 upper_limit_norm)
+    
+    value_result_raw <- bin_distance_values(merge_table_value$DistanceCal, 
+                                            merge_table_value$orgaInt, 
+                                            "raw_bin_orga",
+                                            bin_width,
+                                            upper_limit)
+    
+    value_result_norm <- merge(value_result_norm, value_result_norm_raw, by = c("bin","row"))
+    value_result <- merge(value_result, value_result_raw, by = c("bin","row"))
     
     if (cell_column == 10 && value_column == 9) {
       
       binned_measure_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                     merge_table_value$measureIntBackSub, 
-                                                    "mean_measure_norm",
+                                                    "backsub_bin_measure_norm",
                                                     bin_width_norm,
                                                     upper_limit_norm)
       
       binned_measure_value <- bin_distance_values(merge_table_value$DistanceCal, 
                                                merge_table_value$measureIntBackSub, 
-                                               "mean_measure",
+                                               "backsub_bin_measure",
                                                bin_width,
                                                upper_limit)
       
+      binned_measure_value_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
+                                                       merge_table_value$measureInt, 
+                                                       "raw_bin_measure_norm",
+                                                       bin_width_norm,
+                                                       upper_limit_norm)
       
+      binned_measure_value_raw <- bin_distance_values(merge_table_value$DistanceCal, 
+                                                  merge_table_value$measureInt, 
+                                                  "raw_bin_measure",
+                                                  bin_width,
+                                                  upper_limit)
+
       value_result_norm <- merge(value_result_norm, binned_measure_value_norm, by = c("bin","row"))
       value_result <- merge(value_result, binned_measure_value, by = c("bin","row"))
+      value_result_norm <- merge(value_result_norm, binned_measure_value_norm_raw, by = c("bin","row"))
+      value_result <- merge(value_result, binned_measure_value_raw, by = c("bin","row"))
       
     }
     
@@ -673,12 +702,44 @@ if (analyze_signal_profiles) {
   # plot intensity profiles
   # ----------------------------------------------------------------------------
   intensity_profile_plotlist <- list()
-  # calculate mean per cell for raw data
-  summary.intensity <- value_list_coll %>% 
-    group_by(Name, bin, row) %>% 
-    summarise(across(mean_orga, mean, na.rm =TRUE ))
   
-  plot_profile <- ggplot(data=summary.intensity, aes(x=reorder(bin,row), y=mean_orga, group=Name)) +
+  summary_value_norm <- data.frame(Date=as.Date(character()),
+                                   File=character(), 
+                                   User=character(), 
+                                   stringsAsFactors=FALSE) 
+  
+  summary_value <- data.frame(Date=as.Date(character()),
+                               File=character(), 
+                               User=character(), 
+                               stringsAsFactors=FALSE) 
+  
+  if (plot_background_subtract) {
+    
+    summary_value_norm <- value_list_norm_coll %>% 
+      group_by(Name, bin) %>% 
+      summarise(across(backsub_bin_orga_norm, mean, na.rm =TRUE ))
+    
+    summary_value <- value_list_coll %>% 
+      group_by(Name, bin, row) %>% 
+      summarise(across(backsub_bin_orga, mean, na.rm =TRUE ))
+    
+  } else {
+    
+    summary_value_norm <- value_list_norm_coll %>% 
+      group_by(Name, bin) %>% 
+      summarise(across(raw_bin_orga_norm, mean, na.rm =TRUE ))
+    
+    summary_value <- value_list_coll %>% 
+      group_by(Name, bin, row) %>% 
+      summarise(across(raw_bin_orga, mean, na.rm =TRUE ))
+    
+  }
+  
+  names(summary_value_norm)[3] <- "value"
+  names(summary_value)[4] <- "value"
+  
+  # calculate mean per cell for raw data
+  plot_profile <- ggplot(data=summary_value, aes(x=reorder(bin,row), y=value, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
     lineplot_theme() +
@@ -695,11 +756,8 @@ if (analyze_signal_profiles) {
   
   intensity_profile_plotlist[[length(intensity_profile_plotlist) + 1 ]] <- plot_profile
   # calculate mean per cell for normalized data
-  summary.intensity <- value_list_norm_coll %>% 
-    group_by(Name, bin) %>% 
-    summarise(across(mean_orga_norm, mean, na.rm =TRUE ))
-  
-  plot_profile_norm <- ggplot(data=summary.intensity, aes(x=bin, y=mean_orga_norm, group=Name)) +
+
+  plot_profile_norm <- ggplot(data=summary_value_norm, aes(x=bin, y=value, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
     lineplot_theme() + 
@@ -708,7 +766,7 @@ if (analyze_signal_profiles) {
     ylab("Fluorescent intensity (A.U.)") +
     xlab("Normalized distance from Nucleus") +
     ggtitle("Intensity profile organelle Channel")
-  
+
   ggsave(plot = plot_profile_norm,
          file=paste0(plots, .Platform$file.sep, "NormIntensityProfile_orgaCh", ".pdf"), 
          width = 297, 
@@ -717,24 +775,15 @@ if (analyze_signal_profiles) {
   
   intensity_profile_plotlist[[length(intensity_profile_plotlist) + 1 ]] <- plot_profile_norm
   
-  
-  # calculate mean per cell for normalized data
-  summary.intensity <- value_list_norm_coll %>% 
-    group_by(Name, bin) %>% 
-    summarise(across(mean_orga_norm, mean, na.rm =TRUE ))
-  
   # peak normalisation
-  
-  head(summary.intensity)
-  
-  name_count_value <- as.data.frame(table(summary.intensity$Name))
+  name_count_value <- as.data.frame(table(summary_value_norm$Name))
   value_list <- list()
   
   for (name in name_count_value$Var1){
   
-    data_per_name <- subset(summary.intensity, Name == name)
-    max_value_profiles = max(data_per_name$mean_orga_norm, na.rm = TRUE)
-    data_per_name$peak_norm <- sapply(data_per_name$mean_orga_norm, function(x){x /  max_value_profiles})
+    data_per_name <- subset(summary_value_norm, Name == name)
+    max_value_profiles = max(data_per_name$value, na.rm = TRUE)
+    data_per_name$peak_norm <- sapply(data_per_name$value, function(x){x /  max_value_profiles})
     
     value_list[[name]] <- data_per_name
   }

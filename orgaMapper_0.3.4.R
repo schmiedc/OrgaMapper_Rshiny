@@ -47,7 +47,7 @@ series_regex = "(?<=_)\\d*($)"
 plot_background_subtract = FALSE
 
 # analyze signal profiles
-analyze_signal_profiles = FALSE
+analyze_signal_profiles = TRUE
 
 # Binning for intensity profiles
 # or different method for binning
@@ -672,12 +672,34 @@ if (analyze_signal_profiles) {
   # ----------------------------------------------------------------------------
   # plot intensity profiles
   # ----------------------------------------------------------------------------
+  intensity_profile_plotlist <- list()
+  # calculate mean per cell for raw data
+  summary.intensity <- value_list_coll %>% 
+    group_by(Name, bin, row) %>% 
+    summarise(across(mean_orga, mean, na.rm =TRUE ))
+  
+  plot_profile <- ggplot(data=summary.intensity, aes(x=reorder(bin,row), y=mean_orga, group=Name)) +
+    geom_line(aes(color=Name)) +
+    geom_point(aes(color=Name)) +
+    lineplot_theme() +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    ylab("Fluorescent intensity (A.U.)") +
+    ggtitle("Intensity profile organelle Channel") +
+    xlab("Distance from Nucleus (µm)") 
+  
+  ggsave(plot = plot_profile,
+         file=paste0(plots, .Platform$file.sep, "intensityProfile_orgaCh", ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
+  
+  intensity_profile_plotlist[[length(intensity_profile_plotlist) + 1 ]] <- plot_profile
   # calculate mean per cell for normalized data
   summary.intensity <- value_list_norm_coll %>% 
     group_by(Name, bin) %>% 
     summarise(across(mean_orga_norm, mean, na.rm =TRUE ))
   
-  plot <- ggplot(data=summary.intensity, aes(x=bin, y=mean_orga_norm, group=Name)) +
+  plot_profile_norm <- ggplot(data=summary.intensity, aes(x=bin, y=mean_orga_norm, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
     lineplot_theme() + 
@@ -687,29 +709,56 @@ if (analyze_signal_profiles) {
     xlab("Normalized distance from Nucleus") +
     ggtitle("Intensity profile organelle Channel")
   
-  print(plot)
+  ggsave(plot = plot_profile_norm,
+         file=paste0(plots, .Platform$file.sep, "NormIntensityProfile_orgaCh", ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
   
-  ggsave(file=paste0(plots, .Platform$file.sep, "NormIntensityProfile_orgaCh", ".pdf"), 
-         width = 297, height = 210, units = "mm")
+  intensity_profile_plotlist[[length(intensity_profile_plotlist) + 1 ]] <- plot_profile_norm
   
   
   # calculate mean per cell for normalized data
-  summary.intensity <- value_list_coll %>% 
-    group_by(Name, bin, row) %>% 
-    summarise(across(mean_orga, mean, na.rm =TRUE ))
+  summary.intensity <- value_list_norm_coll %>% 
+    group_by(Name, bin) %>% 
+    summarise(across(mean_orga_norm, mean, na.rm =TRUE ))
   
-  plot <- ggplot(data=summary.intensity, aes(x=reorder(bin,row), y=mean_orga, group=Name)) +
+  # peak normalisation
+  
+  head(summary.intensity)
+  
+  name_count_value <- as.data.frame(table(summary.intensity$Name))
+  value_list <- list()
+  
+  for (name in name_count_value$Var1){
+  
+    data_per_name <- subset(summary.intensity, Name == name)
+    max_value_profiles = max(data_per_name$mean_orga_norm, na.rm = TRUE)
+    data_per_name$peak_norm <- sapply(data_per_name$mean_orga_norm, function(x){x /  max_value_profiles})
+    
+    value_list[[name]] <- data_per_name
+  }
+  # binds collection of normalized value plots and binds them into one dataframe
+  norm_list_value <- do.call("rbind", value_list)
+  
+  plot_profile_peak <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
-    lineplot_theme() +
+    lineplot_theme() + 
+    aes(x = fct_inorder(bin)) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
-    ylab("Fluorescent intensity (A.U.)") +
-    ggtitle("Intensity profile organelle Channel") +
-    xlab("Distance from Nucleus (µm)") 
+    ylab("Normalized fluorescent intensity") +
+    xlab("Normalized distance from Nucleus") +
+    ggtitle("Peak normalized intensity profile organelle Channel")
+
+  ggsave(plot = plot_profile_peak,
+         file=paste0(plots, .Platform$file.sep, "PeakNormIntensityProfile_orgaCh", ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
   
-  print(plot)
+  intensity_profile_plotlist[[length(intensity_profile_plotlist) + 1 ]] <- plot_profile_peak
   
-  ggsave(file=paste0(plots, .Platform$file.sep, "intensityProfile_orgaCh", ".pdf"), 
-         width = 297, height = 210, units = "mm")
-  
+  do.call(grid.arrange, intensity_profile_plotlist)
+
 }

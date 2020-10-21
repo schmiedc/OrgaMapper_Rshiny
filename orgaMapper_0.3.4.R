@@ -27,7 +27,7 @@ library(gridExtra)
 # user defined parameters
 
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/OrgaMapper_useCases/SingelSeries_tiff/output/"
+directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
 
 result_name = "Analysis_test"
 
@@ -40,14 +40,14 @@ norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = TRUE
+single_series = FALSE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
 background_subtract_plots = FALSE
 
 # analyze signal profiles
-analyze_signal_profiles = TRUE
+analyze_signal_profiles = FALSE
 
 # Binning for intensity profiles
 # or different method for binning
@@ -69,6 +69,8 @@ plots = "plots"
 dir.create("plots", showWarnings = FALSE)
 
 # ==============================================================================
+# data processing cells and detection data
+# ==============================================================================
 # read the data
 name_distance = "organelleDistance.csv"
 name_cell_measure = "cellMeasurements.csv"
@@ -76,7 +78,7 @@ name_cell_measure = "cellMeasurements.csv"
 organelle_distance <- read.csv(name_distance, header = TRUE)
 cell_measure <- read.csv(name_cell_measure, header = TRUE)
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 # deal with different name and series options
 
 # TODO needs to default to something that is sensible if invalid
@@ -88,18 +90,18 @@ if (single_series) {
   organelle_distance$Name <- str_remove(organelle_distance$Name, series_regex)
   cell_measure$Name <- str_remove(cell_measure$Name, series_regex)
   
-  # removes trailing underscore or hypen
+  # removes trailing underscore or hyphen
   organelle_distance$Name <- str_remove(organelle_distance$Name, "(_|-| )($)")
   cell_measure$Name <- str_remove(cell_measure$Name, "(_|-| )($)")
   
 }
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 # get number of columns from datasets
 orga_column = ncol(organelle_distance);
 cell_column = ncol(cell_measure);
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 # data processing
 cell_measure_filter <- subset(cell_measure, 
                              Ferets >= feret_lower & Ferets <= feret_upper)
@@ -142,7 +144,7 @@ summary_table <- merge_cell_organelle %>%
 merged_summary <- merge(cell_measure_filter, 
                         summary_table, by = c("Name", "Series", "Cell"))
 
-# ==============================================================================
+# ------------------------------------------------------------------------------
 # save processed data
 write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
            merge_cell_organelle, 
@@ -161,6 +163,8 @@ write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""),
            append=FALSE, 
            showNA=TRUE)
 # ==============================================================================
+# plot detection and cell data
+# ==============================================================================
 boxplot_theme <- function() {
   theme_bw()
   
@@ -172,35 +176,35 @@ boxplot_theme <- function() {
         panel.background = element_blank(),
         # x axis ticks
         axis.text.x = element_text(color = "grey20", 
-                                   size = 16, 
+                                   size = 10, 
                                    angle = 45, 
                                    hjust = .5, 
                                    vjust = .5, 
                                    face = "plain"),
         # y axis ticks
         axis.text.y = element_text(color = "grey20", 
-                                   size = 16, 
+                                   size = 10, 
                                    angle = 0, 
                                    hjust = 1, 
                                    vjust = 0, 
                                    face = "plain"),
         # x axis labels
         axis.title.x = element_text(color = "grey20", 
-                                    size = 22, 
+                                    size = 12, 
                                     angle = 0, 
                                     hjust = .5, 
                                     vjust = 0, 
                                     face = "plain"),
         # y axis labels
         axis.title.y = element_text(color = "grey20", 
-                                    size = 22, 
+                                    size = 12, 
                                     angle = 90, 
                                     hjust = .5, 
                                     vjust = .5, 
                                     face = "plain"),
         # title
         title = element_text(color = "grey20", 
-                             size = 25, 
+                             size = 14, 
                              angle = 0, 
                              hjust = 0, 
                              vjust = 1, 
@@ -219,47 +223,59 @@ lineplot_theme <- function() {
     panel.background = element_blank(),
     # x axis ticks
     axis.text.x = element_text(color = "grey20", 
-                               size = 16, 
+                               size = 10, 
                                angle = 0, 
                                hjust = .5, 
                                vjust = .5, 
                                face = "plain"),
     # y axis ticks
     axis.text.y = element_text(color = "grey20", 
-                               size = 16, 
+                               size = 10, 
                                angle = 0, 
                                hjust = 1, 
                                vjust = 0, 
                                face = "plain"),
     # x axis labels
     axis.title.x = element_text(color = "grey20", 
-                                size = 22, 
+                                size = 12, 
                                 angle = 0, 
                                 hjust = .5, 
                                 vjust = 0, 
                                 face = "plain"),
     # y axis labels
     axis.title.y = element_text(color = "grey20", 
-                                size = 22, 
+                                size = 12, 
                                 angle = 90, 
                                 hjust = .5, 
                                 vjust = .5, 
                                 face = "plain"),
     # title
     title = element_text(color = "grey20", 
-                         size = 25, 
+                         size = 14, 
                          angle = 0, 
                          hjust = 0, 
                          vjust = 1, 
                          face = "plain")
   )
 }
-# ==============================================================================
+# ------------------------------------------------------------------------------
 # plots area, number of detections and mean value
+organelle_intensity_cell = ""
+
+if (background_subtract_plots) {
+  
+  organelle_intensity_cell = "MeanValueOrga"
+  
+} else {
+  
+  organelle_intensity_cell = "MeanOrgaBackSub"
+  
+}
+
 measure1 <- list("Ferets", 
                  "CellArea", 
-                 "NumDetections", 
-                 "MeanOrgaBackSub")
+                 "NumDetections",
+                 organelle_intensity_cell)
 
 measure1_title <- list("Average Feret's diameter", 
                        "Average cell area", 
@@ -279,11 +295,13 @@ measure1_file <- list("feretPlot",
 cell_measure_long <- cell_measure_filter %>% 
   pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
 
+plot_list_cell <- list()
+
 for (index in seq_along(measure1)) {
   
   dataSubset <- subset(cell_measure_long, cell_measure_long$name==measure1[index])
   
-  plot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
+  plot_cell <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
     geom_boxplot(outlier.size = 0, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
@@ -291,41 +309,61 @@ for (index in seq_along(measure1)) {
     xlab("Treatment") +
     ylab( measure1_label[index] ) + 
     boxplot_theme()
+
+  plot_list_cell[[index]] <- plot_cell 
   
-  print(plot)
-  
-  ggsave(file=paste0(plots, .Platform$file.sep, measure1_file[index], ".pdf"), 
-         width = 297, height = 210, units = "mm")
+  ggsave(plot = plot_cell,
+         file=paste0(plots, .Platform$file.sep, measure1_file[index], ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
   
 }
 
+
+
 # ------------------------------------------------------------------------------
 # plot distance and detection intensity
-measure2 <- list("PeakDetectBackSub.mean", 
-                 "DistanceCal.mean", 
-                 "DistanceNorm.mean")
+head(summary_table)
+organelle_intensity_cell = ""
 
-measure2_title <- list("Average peak detection intensity  (detection channel)", 
-                       "Average distance from nucleus", 
-                       "Average normalized distance from nucleus")
+if (background_subtract_plots) {
+  
+  organelle_intensity_cell = "PeakDetectionInt.mean"
+  
+} else {
+  
+  organelle_intensity_cell = "PeakDetectBackSub.mean"
+  
+}
 
-measure2_label <- list("fluorescent intensity (A.U.)", 
-                       "distance (µm)", 
-                       "normalized distance")
+measure2 <- list("DistanceCal.mean", 
+                 "DistanceNorm.mean",
+                 "PeakDetectBackSub.mean")
 
-measure2_file <- list("intPerDetectionDetectionChannel", 
-                      "distance", 
-                      "distanceNorm")
+measure2_title <- list("Average distance from nucleus", 
+                       "Average normalized distance from nucleus",
+                       "Average peak detection intensity  (detection channel)")
+
+measure2_label <- list("distance (µm)", 
+                       "normalized distance",
+                       "fluorescent intensity (A.U.)")
+
+measure2_file <- list("distance", 
+                      "distanceNorm",
+                      "intPerDetectionDetectionChannel")
 
 summary_long <- summary_table %>% 
   pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, 
                values_to = "measurement" )
 
+plot_list_detection <- list()
+
 for (index in seq_along(measure2)) {
   
   dataSubset <- subset(summary_long, summary_long$name==measure2[index])
   
-  plot <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
+  plot_detection <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
     geom_boxplot(outlier.size = 0, outlier.shape = 1) +
     stat_boxplot(geom = 'errorbar', width = 0.2) +
     geom_jitter(width = 0.1) +
@@ -334,18 +372,22 @@ for (index in seq_along(measure2)) {
     ylab(measure2_label[index]) +
     boxplot_theme()
   
-  print(plot)
+  plot_list_detection[[index]] <- plot_detection
   
-  ggsave(file=paste0(plots, .Platform$file.sep, measure2_file[index], ".pdf"), 
-         width = 297, height = 210, units = "mm")
+  ggsave(plot = plot_detection, 
+         file=paste0(plots, .Platform$file.sep, measure2_file[index], ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
   
 }
+
 
 # ------------------------------------------------------------------------------
 # plot measure channel
 if (cell_column == 10 && orga_column == 10) {
   
-  plot <- ggplot(cell_measure_filter, aes(x=Name, y=MeanMeasureBackSub)) +
+  plot_cell_measure <- ggplot(cell_measure_filter, aes(x=Name, y=MeanMeasureBackSub)) +
     ggtitle("Average intensity in cell (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
@@ -354,12 +396,15 @@ if (cell_column == 10 && orga_column == 10) {
     geom_jitter(width = 0.1) +
     boxplot_theme()
   
-  print(plot)
+  plot_list_cell[[length(plot_list_cell)  + 1]] <- plot_cell_measure
   
-  ggsave(file=paste0(plots, .Platform$file.sep, "intPerCellMeasure", ".pdf"), 
-         width = 297, height = 210, units = "mm")
+  ggsave(plot = plot_cell_measure,
+         file=paste0(plots, .Platform$file.sep, "intPerCellMeasure", ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
   
-  plot <- ggplot(summary_table, aes(x=Name, y=PeakMeasureBackSub.mean)) +
+  plot_peak_measure <- ggplot(summary_table, aes(x=Name, y=PeakMeasureBackSub.mean)) +
     ggtitle("Average peak detection intensity (measure channel)") + 
     xlab("Treatment") +
     ylab("fluorescent intensity (A.U.)") +
@@ -368,10 +413,16 @@ if (cell_column == 10 && orga_column == 10) {
     geom_jitter(width = 0.1) +
     boxplot_theme()
   
-  print(plot)
+  plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_peak_measure
   
-  ggsave(file=paste0(plots, .Platform$file.sep, "intPerDetectionMeasureChannel", ".pdf"), 
-         width = 297, height = 210, units = "mm")
+  ggsave(plot = plot_peak_measure,
+         file=paste0(plots, 
+                     .Platform$file.sep, 
+                     "intPerDetectionMeasureChannel", 
+                     ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
   
 }
 
@@ -413,7 +464,7 @@ colnames(norm_list2)[2] <- "index"
 
 # Plot Lysosome density vs normalized distance from Nucleus
 # density plots with peak normalized data
-plot <- ggplot(norm_list2, aes(x = x, 
+plot_density <- ggplot(norm_list2, aes(x = x, 
                                y = peak_norm, 
                                group = name, 
                                color = name)) + 
@@ -424,15 +475,25 @@ plot <- ggplot(norm_list2, aes(x = x,
   scale_x_continuous(expand = c(0, 0)) + # force start at 0
   scale_y_continuous(expand = c(0, 0)) + # force start at 0
   lineplot_theme()
-  
 
-print(plot)
+ggsave(plot = plot_density,
+       file=paste0(plots, .Platform$file.sep, "densityPlot", ".pdf"), 
+       width = 297, 
+       height = 210, 
+       units = "mm")
 
-ggsave(file=paste0(plots, .Platform$file.sep, "densityPlot", ".pdf"), 
-       width = 297, height = 210, units = "mm")
+plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density
+
+# ==============================================================================
+# print plots to grid
+# ==============================================================================
+do.call(grid.arrange, plot_list_cell)
+do.call(grid.arrange, plot_list_detection)
+
 
 # ==============================================================================
 # intensity profiles
+# ==============================================================================
 if (analyze_signal_profiles) {
   
   # get value distances for each image
@@ -544,6 +605,8 @@ if (analyze_signal_profiles) {
   value_list_coll <- do.call("rbind", value_list)
   
   # ------------------------------------------------------------------------------
+  # save intensity profiles
+  # ------------------------------------------------------------------------------
   write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
              value_list_norm_coll, 
              sheetName="Sheet1",  
@@ -560,7 +623,9 @@ if (analyze_signal_profiles) {
              append=FALSE, 
              showNA=TRUE)
   
-  # ------------------------------------------------------------------------------
+  # ----------------------------------------------------------------------------
+  # plot intensity profiles
+  # ----------------------------------------------------------------------------
   # calculate mean per cell for normalized data
   summary.intensity <- value_list_norm_coll %>% 
     group_by(Name, bin) %>% 
@@ -569,12 +634,12 @@ if (analyze_signal_profiles) {
   plot <- ggplot(data=summary.intensity, aes(x=bin, y=mean_orga_norm, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
-    xlab("Normalized distance from Nucleus") +
-    ylab("Fluorescent intensity (A.U.)") +
-    ggtitle("Intensity profile organelle Channel") +
     lineplot_theme() + 
     aes(x = fct_inorder(bin)) + 
-    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+    theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    ylab("Fluorescent intensity (A.U.)") +
+    xlab("Normalized distance from Nucleus") +
+    ggtitle("Intensity profile organelle Channel")
   
   print(plot)
   
@@ -590,10 +655,10 @@ if (analyze_signal_profiles) {
   plot <- ggplot(data=summary.intensity, aes(x=reorder(bin,row), y=mean_orga, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
-    ylab("Fluorescent intensity (A.U.)") +
-    ggtitle("Intensity profile organelle Channel") +
     lineplot_theme() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
+    ylab("Fluorescent intensity (A.U.)") +
+    ggtitle("Intensity profile organelle Channel") +
     xlab("Distance from Nucleus (µm)") 
   
   print(plot)

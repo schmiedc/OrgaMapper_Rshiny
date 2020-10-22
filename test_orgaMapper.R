@@ -1,6 +1,7 @@
 setwd("/data1/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
 
 library("openxlsx")
+library(gridExtra)
 source("process_data.R")
 source("plot_data.R")
 
@@ -108,3 +109,11 @@ cell_plots <- plot_cell_measurements(cell_measure_filter,
                                      cell_column,
                                      orga_column)
 
+detection_plots <- plot_detection_measurements(merge_cell_organelle,
+                                               merged_summary,
+                                               plots_dir,
+                                               cell_column,
+                                               orga_column)
+
+do.call(grid.arrange, plot_list_cell)
+do.call(grid.arrange, plot_list_detection)

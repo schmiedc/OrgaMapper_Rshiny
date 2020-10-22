@@ -405,8 +405,7 @@ plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density
 
 # ------------------------------------------------------------------------------
 # plot distance and detection intensity
-head(summary_table)
-organelle_intensity_cell = ""
+organelle_intensity_peak  = ""
 
 if (plot_background_subtract) {
   
@@ -482,9 +481,7 @@ if (cell_column == 10 && orga_column == 10) {
     measure_intensity_peak = "PeakMeasureInt.mean"
     
   }
-  
-  head(cell_measure_filter)
-  
+
   cell_measure_filter_new <- cell_measure_filter[c("Name", measure_intensity_cell)]
   colnames(cell_measure_filter_new)[2] <- "measure"
   

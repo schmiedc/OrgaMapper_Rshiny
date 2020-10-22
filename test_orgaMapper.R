@@ -1,5 +1,8 @@
 setwd("/data1/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
+
+library("openxlsx")
 source("process_data.R")
+source("plot_data.R")
 
 # ==============================================================================
 # Params
@@ -34,6 +37,19 @@ bin_width_norm = 0.05
 
 upper_limit = 75
 bin_width = 2
+
+# ==============================================================================
+# where to save the data
+out_dir =  directory
+
+# result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
+
+# plot dir
+
+plots_dir <- file.path(out_dir, plots, fsep = .Platform$file.sep)
+
+dir.create(plots_dir, showWarnings = FALSE)
+
 # ==============================================================================
 name_distance = "organelleDistance.csv"
 name_cell_measure = "cellMeasurements.csv"
@@ -65,4 +81,30 @@ merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
 
 merged_summary <- create_summary_table(merge_cell_organelle,
                                        cell_measure_filter)
+
+# ------------------------------------------------------------------------------
+# save processed data
+write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
+           merge_cell_organelle, 
+           sheetName="Sheet1",  
+           col.names=TRUE, 
+           row.names=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+# merged_summary
+write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
+           merged_summary, 
+           sheetName="Sheet1",  
+           col.names=TRUE, 
+           row.names=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+# ------------------------------------------------------------------------------
+# plot data
+cell_plots <- plot_cell_measurements(cell_measure_filter,
+                                     plots_dir,
+                                     cell_column,
+                                     orga_column)
 

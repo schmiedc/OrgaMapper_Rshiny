@@ -3,9 +3,7 @@ library(gridExtra)
 library(shiny)
 library(shinyFiles)
 
-# source("dataProcessing.R")
-# source("saveData.R")
-# source("plotData.R")
+# source("orgaShiny.R")
 # ============================================================================
 #
 #  DESCRIPTION: Data analysis for OrgaMapper
@@ -56,6 +54,12 @@ ui <- fluidPage(
                                    choices = list("Singleseries" = 1, 
                                                   "Multiseries" = 2),
                                    selected = 2),
+                      
+                      textInput(inputId = "series_regex", 
+                                label = "Regular expression series number:", 
+                                value = "", 
+                                width = NULL,
+                                placeholder = "(?<=_)\\d*($)"),
                       
                       textInput(inputId = "resultname", 
                                 label = "Result Name:", 
@@ -188,12 +192,19 @@ server <- function(input, output, session) {
   # gets lists for signal and background
   
   observeEvent(input$processData, {
-    
-    # further settings
-    labelSignal = "Spot"
-    labelBackground = "background"
-    
+
     inputDirectory <- global$datapath
+    
+    name_distance = "organelleDistance.csv"
+    name_cell_measure = "cellMeasurements.csv"
+    
+    organelle_distance <- read_collected_files(name_distance, )
+    cell_measure <- read_collected_files(name_cell_measure, )
+
+    orga_column = ncol(organelle_distance);
+    cell_column = ncol(cell_measure);
+    
+    
     
     # collects raw data
     table.signal <- collectList(inputDirectory, labelSignal, input$timeRes)
@@ -202,6 +213,10 @@ server <- function(input, output, session) {
     # calculates average mean intensity per frame
     avg.signal <- calcMean(table.signal)
     avg.background <- calcMean(table.background)
+    
+    
+    
+    
     
     # generate final table
     finalTable <- processData(indir, input$frameStim, avg.signal, avg.background)

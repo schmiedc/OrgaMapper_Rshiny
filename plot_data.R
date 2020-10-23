@@ -392,4 +392,6 @@ plot_detection_measurements <- function(full_data_table,
     
   }
   
+  return (plot_list_detection)
+  
 }

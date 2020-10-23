@@ -4,6 +4,7 @@ library("openxlsx")
 library(gridExtra)
 source("process_data.R")
 source("plot_data.R")
+source("process_profiles.R")
 
 # ==============================================================================
 # Params
@@ -43,11 +44,11 @@ bin_width = 2
 # where to save the data
 out_dir =  directory
 
-# result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
+result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
 
 # plot dir
 
-plots_dir <- file.path(out_dir, plots, fsep = .Platform$file.sep)
+plots_dir <- file.path(out_dir, "plots", fsep = .Platform$file.sep)
 
 dir.create(plots_dir, showWarnings = FALSE)
 
@@ -115,5 +116,37 @@ detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                cell_column,
                                                orga_column)
 
-do.call(grid.arrange, plot_list_cell)
-do.call(grid.arrange, plot_list_detection)
+do.call(grid.arrange, cell_plots)
+do.call(grid.arrange, detection_plots)
+
+if (analyze_signal_profiles) {
+  
+  name_value_measure = "intDistance.csv"
+  
+  profile_collected <- collect_individual_profiles(directory,
+                                                   name_value_measure,
+                                                   cell_measure_filter,
+                                                   single_series,
+                                                   series_regex)
+  
+  value_list <- profile_collected$raw
+  value_list_norm <- profile_collected$norm
+  
+  # ------------------------------------------------------------------------------
+  write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
+             value_list, 
+             sheetName="Sheet1",  
+             col.names=TRUE, 
+             row.names=TRUE, 
+             append=FALSE, 
+             showNA=TRUE)
+  
+  write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
+             value_list_norm, 
+             sheetName="Sheet1",  
+             col.names=TRUE, 
+             row.names=TRUE, 
+             append=FALSE, 
+             showNA=TRUE)
+
+}

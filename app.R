@@ -7,6 +7,8 @@ library(gridExtra)
 
 source("process_data.R")
 source("plot_data.R")
+source("process_profiles.R")
+source("plot_profiles.R")
 
 # ============================================================================
 #
@@ -115,15 +117,9 @@ ui <- fluidPage(
                   
                   fluidRow(
            
-                      h3("Processing:"),
+                      h3("Process & Plot:"),
                       
                       actionButton("processData", "Plot Data"),
-                      
-                      h3("Save Results:"),
-                      
-                      actionButton("saveData", "Save Data")
-                      #checkboxInput(inputId = "asCsv", "as .csv", value = FALSE, width = NULL),
-                      #checkboxInput(inputId = "asXlsx", "as .xlsx", value = FALSE, width = NULL)
                       
                     ),
                   
@@ -147,7 +143,9 @@ ui <- fluidPage(
                   tabsetPanel(type = "tabs",
                               # takes outputId plot
                               tabPanel("Cell Measurements", plotOutput("cell_plots", height=1200)),
-                              tabPanel("Organelle Measurements", plotOutput("orga_plots", height=1200))
+                              tabPanel("Organelle Measurements", plotOutput("orga_plots", height=1200)),
+                              tabPanel("Organelle Profile", plotOutput("intProfile_organelle", height=1200)),
+                              tabPanel("Measurement Profile", plotOutput("intProfile_measure", height=1200))
                   )
                   
                 )
@@ -194,9 +192,6 @@ server <- function(input, output, session) {
   # gets lists for signal and background
   
   observeEvent(input$processData, {
-
-    # ==========================================================================
-    # Params
     
     # path to folder where the directories for the measurements are
     directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
@@ -229,19 +224,16 @@ server <- function(input, output, session) {
     upper_limit = 75
     bin_width = 2
     
-    # ==========================================================================
+    # ==============================================================================
     # where to save the data
     out_dir =  directory
-    
-    # result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
+    result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
     
     # plot dir
-    
-    plots_dir <- file.path(out_dir, plots, fsep = .Platform$file.sep)
-    
+    plots_dir <- file.path(out_dir, "plots", fsep = .Platform$file.sep)
     dir.create(plots_dir, showWarnings = FALSE)
     
-    # ==========================================================================
+    # ==============================================================================
     name_distance = "organelleDistance.csv"
     name_cell_measure = "cellMeasurements.csv"
     
@@ -250,14 +242,13 @@ server <- function(input, output, session) {
                                                single_series, 
                                                series_regex)
     
-    
     cell_measure <- read_collected_files(directory, 
                                          name_cell_measure, 
                                          single_series, 
                                          series_regex)
     
-    orga_column = ncol(organelle_distance)
-    cell_column = ncol(cell_measure)
+    cell_column <- ncol(cell_measure)
+    orga_column <- ncol(organelle_distance)
     
     cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                      feret_lower, 
@@ -273,7 +264,7 @@ server <- function(input, output, session) {
     merged_summary <- create_summary_table(merge_cell_organelle,
                                            cell_measure_filter)
     
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
     # save processed data
     write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
                merge_cell_organelle, 
@@ -292,24 +283,95 @@ server <- function(input, output, session) {
                append=FALSE, 
                showNA=TRUE)
     
-    # --------------------------------------------------------------------------
+    # ------------------------------------------------------------------------------
     # plot data
     cell_plots <- plot_cell_measurements(cell_measure_filter,
                                          plots_dir,
                                          cell_column,
-                                         orga_column)
+                                         orga_column,
+                                         plot_background_subtract)
     
     detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                    merged_summary,
                                                    plots_dir,
                                                    cell_column,
-                                                   orga_column)
+                                                   orga_column,
+                                                   norm_distance_nucleus,
+                                                   plot_background_subtract)
     
+    if (analyze_signal_profiles) {
+      
+      name_value_measure = "intDistance.csv"
+      
+      profile_collected <- collect_individual_profiles(directory,
+                                                       name_value_measure,
+                                                       cell_measure_filter,
+                                                       single_series,
+                                                       series_regex,
+                                                       upper_limit,
+                                                       bin_width,
+                                                       upper_limit_norm,
+                                                       bin_width_norm)
+      
+      value_list <- profile_collected$raw
+      value_list_norm <- profile_collected$norm
+      
+      # ------------------------------------------------------------------------------
+      write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
+                 value_list, 
+                 sheetName="Sheet1",  
+                 col.names=TRUE, 
+                 row.names=TRUE, 
+                 append=FALSE, 
+                 showNA=TRUE)
+      
+      write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
+                 value_list_norm, 
+                 sheetName="Sheet1",  
+                 col.names=TRUE, 
+                 row.names=TRUE, 
+                 append=FALSE, 
+                 showNA=TRUE)
+      
+      profile_plot <- plot_profiles(value_list, 
+                                    value_list_norm, 
+                                    "organelle", 
+                                    plots_dir, 
+                                    plot_background_subtract)
+      
+      
+      if (cell_column == 10 && orga_column == 10) {
+        
+        measure_profiles <- plot_profiles(value_list, 
+                                          value_list_norm, 
+                                          "measure", 
+                                          plots_dir, 
+                                          plot_background_subtract)
+        
+        
+        output$intProfile_measure <- renderPlot({
+          
+          measure_plots <- do.call(grid.arrange, measure_profiles)
+          
+          print(measure_plots)
+          
+        })
+        
+      } 
+      
+      output$intProfile_organelle <- renderPlot({
+        
+        profile_plots <- do.call(grid.arrange, profile_plot)
+        
+        print(profile_plots)
+        
+      })
+
+    } 
     
-   
     output$cell_plots <- renderPlot({
       
-      cell_plots <- do.call(grid.arrange, plot_list_cell)
+      cell_plots <- do.call(grid.arrange, cell_plots)
       
       print(cell_plots)
       
@@ -317,45 +379,14 @@ server <- function(input, output, session) {
     
     output$orga_plots <- renderPlot({
       
-      orga_plots <- do.call(grid.arrange, plot_list_detection)
+      orga_plots <- do.call(grid.arrange, detection_plots)
       
       print(orga_plots)
       
     })
     
   })
-  
-  
-  observeEvent(input$saveData, {
-    
-    inputDirectory <- global$datapath
-    outputDirectory <- global$datapath
-    resultname <- input$resultname
-    
-    # further settings
-    labelSignal = "Spot"
-    labelBackground = "background"
-    
-    inputDirectory <- global$datapath
-    
-    # collects raw data
-    table.signal <- collectList(inputDirectory, labelSignal, input$timeRes)
-    table.background <- collectList(inputDirectory, labelBackground, input$timeRes)
-    
-    # calculates average mean intensity per frame
-    avg.signal <- calcMean(table.signal)
-    avg.background <- calcMean(table.background)
-    
-    # generate final table
-    finalTable <- processData(indir, input$frameStim, avg.signal, avg.background)
-    
-    # save files
-    
-    writeToCsv(outputDirectory, resultname, table.signal, table.background, finalTable)
-    
-    showNotification("Data saved")
-    
-  })
+
   
 }
 

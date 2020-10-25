@@ -1,10 +1,10 @@
 library(tidyverse)
 
 # creates binned data
-bin_distance_values <- function(bin, value, variable_name, bin_width, upper_limit) {
+bin_distance_values <- function(bin, value, variable_name, width, limit) {
   
   output_apply <- tapply(value, 
-                         cut(bin, seq(0, upper_limit, by=bin_width)), 
+                         cut(bin, seq(0, limit, by=width)), 
                          mean)
   
   # transform output of tapply to data frame
@@ -25,8 +25,6 @@ process_profile_data <- function(value_data,
                                  per_cell_data,
                                  c_col,
                                  v_col) {
-  
-  
   
   # merge cell measurements with intensity profiles
   merge_table <- merge(per_cell_data, 
@@ -53,7 +51,11 @@ collect_individual_profiles <- function(inputdir,
                                         name,
                                         cell_measure_data,
                                         series,
-                                        regular_expression) {
+                                        regular_expression,
+                                        limit,
+                                        width,
+                                        limit_norm,
+                                        width_norm) {
 
   cell_col = ncol(cell_measure_data)
 
@@ -93,26 +95,26 @@ collect_individual_profiles <- function(inputdir,
     value_result_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                              merge_table_value$orgaIntBackSub, 
                                              "backsub_bin_orga_norm",
-                                             bin_width_norm,
-                                             upper_limit_norm)
+                                             width_norm,
+                                             limit_norm)
     
     value_result <- bin_distance_values(merge_table_value$DistanceCal, 
                                         merge_table_value$orgaIntBackSub, 
                                         "backsub_bin_orga",
-                                        bin_width,
-                                        upper_limit)
+                                        width,
+                                        limit)
     
     value_result_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                  merge_table_value$orgaInt, 
                                                  "raw_bin_orga_norm",
-                                                 bin_width_norm,
-                                                 upper_limit_norm)
+                                                 width_norm,
+                                                 limit_norm)
     
     value_result_raw <- bin_distance_values(merge_table_value$DistanceCal, 
                                             merge_table_value$orgaInt, 
                                             "raw_bin_orga",
-                                            bin_width,
-                                            upper_limit)
+                                            width,
+                                            limit)
     
     value_result_norm <- merge(value_result_norm, value_result_norm_raw, by = c("bin","row"))
     value_result <- merge(value_result, value_result_raw, by = c("bin","row"))
@@ -122,26 +124,26 @@ collect_individual_profiles <- function(inputdir,
       binned_measure_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                        merge_table_value$measureIntBackSub, 
                                                        "backsub_bin_measure_norm",
-                                                       bin_width_norm,
-                                                       upper_limit_norm)
+                                                       width_norm,
+                                                       limit_norm)
       
       binned_measure_value <- bin_distance_values(merge_table_value$DistanceCal, 
                                                   merge_table_value$measureIntBackSub, 
                                                   "backsub_bin_measure",
-                                                  bin_width,
-                                                  upper_limit)
+                                                  width,
+                                                  limit)
       
       binned_measure_value_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                            merge_table_value$measureInt, 
                                                            "raw_bin_measure_norm",
-                                                           bin_width_norm,
-                                                           upper_limit_norm)
+                                                           width_norm,
+                                                           limit_norm)
       
       binned_measure_value_raw <- bin_distance_values(merge_table_value$DistanceCal, 
                                                       merge_table_value$measureInt, 
                                                       "raw_bin_measure",
-                                                      bin_width,
-                                                      upper_limit)
+                                                      width,
+                                                      limit)
       
       value_result_norm <- merge(value_result_norm, binned_measure_value_norm, by = c("bin","row"))
       value_result <- merge(value_result, binned_measure_value, by = c("bin","row"))

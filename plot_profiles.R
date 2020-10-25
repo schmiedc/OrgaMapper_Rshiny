@@ -5,7 +5,8 @@ library(lazyeval)
 plot_profiles <- function(value_collected,
                           value_norm_collected,
                           channel_string,
-                          plots) {
+                          plots,
+                          background_subtract) {
   
   summary_value_norm <- data.frame(Date=as.Date(character()),
                                    File=character(), 
@@ -39,7 +40,7 @@ plot_profiles <- function(value_collected,
   }
   
   # creates summary data for plots
-  if (plot_background_subtract) {
+  if (background_subtract) {
     
     summary_value_norm <- value_norm_collected %>% 
       group_by(Name, bin) %>% 

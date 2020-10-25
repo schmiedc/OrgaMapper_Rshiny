@@ -98,13 +98,14 @@ lineplot_theme <- function() {
 
 plot_cell_measurements <- function(cell_data_table,
                                    plots,
-                                   column_cell_table,
-                                   column_orga_table) {
+                                   cell_column,
+                                   orga_column,
+                                   background_subtract) {
   
   # plots area, number of detections and mean value
   organelle_intensity_cell = ""
   
-  if (plot_background_subtract) {
+  if (background_subtract) {
     
     organelle_intensity_cell = "MeanOrgaBackSub"
     
@@ -169,7 +170,7 @@ plot_cell_measurements <- function(cell_data_table,
   
   if (cell_column == 10 && orga_column == 10) {
     
-    if (plot_background_subtract) {
+    if (background_subtract) {
       
       measure_intensity_cell = "MeanMeasureBackSub"
       
@@ -210,7 +211,9 @@ plot_detection_measurements <- function(full_data_table,
                                         summary_table,
                                         plots,
                                         column_cell_table,
-                                        column_orga_table) {
+                                        column_orga_table,
+                                        norm_distance_nucleus,
+                                        background_subtract) {
   
   # lysosome density plots
   plot_list_detection <- list()
@@ -297,7 +300,7 @@ plot_detection_measurements <- function(full_data_table,
   # plot distance and detection intensity
   organelle_intensity_peak = ""
   
-  if (plot_background_subtract) {
+  if (background_subtract) {
     
     organelle_intensity_peak = "PeakDetectBackSub.mean"
     
@@ -357,7 +360,7 @@ plot_detection_measurements <- function(full_data_table,
   
   if (column_cell_table == 10 && column_orga_table == 10) {
     
-    if (plot_background_subtract) {
+    if (background_subtract) {
       
       measure_intensity_peak = "PeakMeasureBackSub.mean"
       

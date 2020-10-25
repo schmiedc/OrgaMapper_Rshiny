@@ -5,7 +5,7 @@ library(gridExtra)
 source("process_data.R")
 source("plot_data.R")
 source("process_profiles.R")
-
+source("plot_profiles.R")
 # ==============================================================================
 # Params
 
@@ -67,9 +67,6 @@ cell_measure <- read_collected_files(directory,
                                      single_series, 
                                      series_regex)
 
-orga_column = ncol(organelle_distance)
-cell_column = ncol(cell_measure)
-
 cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                  feret_lower, 
                                                  feret_upper,
@@ -128,7 +125,8 @@ if (analyze_signal_profiles) {
                                                    cell_measure_filter,
                                                    single_series,
                                                    series_regex)
-  
+
+
   value_list <- profile_collected$raw
   value_list_norm <- profile_collected$norm
   
@@ -148,5 +146,12 @@ if (analyze_signal_profiles) {
              row.names=TRUE, 
              append=FALSE, 
              showNA=TRUE)
-
+  
+  profile_plot <- plot_profiles(value_list, value_list_norm, "organelle")
+  do.call(grid.arrange, profile_plot)
+  
+  if 
+  
+  measure_profiles <- plot_profiles(value_list, value_list_norm, "measure")
+  do.call(grid.arrange, measure_profiles)
 }

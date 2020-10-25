@@ -39,7 +39,7 @@ process_profile_data <- function(value_data,
   # background subtraction for detection intensity
   merge_table$orgaIntBackSub <- merge_table$orgaInt - merge_table$MeanBackgroundOrga
   
-  if (c_col == 10 && v_col == 9) {
+  if (c_col == 12 && v_col == 9) {
     
     merge_table$measureIntBackSub <- merge_table$measureInt - merge_table$MeanBackgroundMeasure
     
@@ -56,7 +56,7 @@ collect_individual_profiles <- function(inputdir,
                                         regular_expression) {
 
   cell_col = ncol(cell_measure_data)
-  
+
   file_name <- paste0(inputdir,name)
   
   value_filenames <- list.files(path = inputdir,
@@ -117,7 +117,7 @@ collect_individual_profiles <- function(inputdir,
     value_result_norm <- merge(value_result_norm, value_result_norm_raw, by = c("bin","row"))
     value_result <- merge(value_result, value_result_raw, by = c("bin","row"))
     
-    if (cell_col == 10 && value_col == 9) {
+    if (cell_col == 12 && value_col == 9) {
       
       binned_measure_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                        merge_table_value$measureIntBackSub, 

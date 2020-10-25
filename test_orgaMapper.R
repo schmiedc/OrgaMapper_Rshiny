@@ -8,7 +8,6 @@ source("process_profiles.R")
 source("plot_profiles.R")
 # ==============================================================================
 # Params
-
 # path to folder where the directories for the measurements are
 directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
 
@@ -104,13 +103,16 @@ write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""),
 cell_plots <- plot_cell_measurements(cell_measure_filter,
                                      plots_dir,
                                      cell_column,
-                                     orga_column)
+                                     orga_column,
+                                     plot_background_subtract)
 
 detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                merged_summary,
                                                plots_dir,
                                                cell_column,
-                                               orga_column)
+                                               orga_column,
+                                               norm_distance_nucleus,
+                                               plot_background_subtract)
 
 do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
@@ -123,9 +125,12 @@ if (analyze_signal_profiles) {
                                                    name_value_measure,
                                                    cell_measure_filter,
                                                    single_series,
-                                                   series_regex)
-
-
+                                                   series_regex,
+                                                   upper_limit,
+                                                   bin_width,
+                                                   upper_limit_norm,
+                                                   bin_width_norm)
+  
   value_list <- profile_collected$raw
   value_list_norm <- profile_collected$norm
   
@@ -146,14 +151,25 @@ if (analyze_signal_profiles) {
              append=FALSE, 
              showNA=TRUE)
   
-  profile_plot <- plot_profiles(value_list, value_list_norm, "organelle", plots_dir)
-  do.call(grid.arrange, profile_plot)
+  profile_plot <- plot_profiles(value_list, 
+                                value_list_norm, 
+                                "organelle", 
+                                plots_dir, 
+                                plot_background_subtract)
+  
   
   if (cell_column == 10 && orga_column == 10) {
     
-    measure_profiles <- plot_profiles(value_list, value_list_norm, "measure", plots_dir)
+    measure_profiles <- plot_profiles(value_list, 
+                                      value_list_norm, 
+                                      "measure", 
+                                      plots_dir, 
+                                      plot_background_subtract)
+    
     do.call(grid.arrange, measure_profiles)
-
+    
   }
+  
+  do.call(grid.arrange, profile_plot)
   
 }

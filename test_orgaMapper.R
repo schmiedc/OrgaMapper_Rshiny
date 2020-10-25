@@ -43,13 +43,10 @@ bin_width = 2
 # ==============================================================================
 # where to save the data
 out_dir =  directory
-
 result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
 
 # plot dir
-
 plots_dir <- file.path(out_dir, "plots", fsep = .Platform$file.sep)
-
 dir.create(plots_dir, showWarnings = FALSE)
 
 # ==============================================================================
@@ -61,11 +58,13 @@ organelle_distance <- read_collected_files(directory,
                                            single_series, 
                                            series_regex)
 
-
 cell_measure <- read_collected_files(directory, 
                                      name_cell_measure, 
                                      single_series, 
                                      series_regex)
+
+cell_column <- ncol(cell_measure)
+orga_column <- ncol(organelle_distance)
 
 cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                  feret_lower, 
@@ -147,11 +146,9 @@ if (analyze_signal_profiles) {
              append=FALSE, 
              showNA=TRUE)
   
-  profile_plot <- plot_profiles(value_list, value_list_norm, "organelle")
+  profile_plot <- plot_profiles(value_list, value_list_norm, "organelle", plots_dir)
   do.call(grid.arrange, profile_plot)
   
-  if 
-  
-  measure_profiles <- plot_profiles(value_list, value_list_norm, "measure")
+  measure_profiles <- plot_profiles(value_list, value_list_norm, "measure", plots_dir)
   do.call(grid.arrange, measure_profiles)
 }

@@ -4,7 +4,8 @@ library(lazyeval)
 
 plot_profiles <- function(value_collected,
                           value_norm_collected,
-                          channel_string) {
+                          channel_string,
+                          plots) {
   
   summary_value_norm <- data.frame(Date=as.Date(character()),
                                    File=character(), 

@@ -149,6 +149,11 @@ if (analyze_signal_profiles) {
   profile_plot <- plot_profiles(value_list, value_list_norm, "organelle", plots_dir)
   do.call(grid.arrange, profile_plot)
   
-  measure_profiles <- plot_profiles(value_list, value_list_norm, "measure", plots_dir)
-  do.call(grid.arrange, measure_profiles)
+  if (cell_column == 10 && orga_column == 10) {
+    
+    measure_profiles <- plot_profiles(value_list, value_list_norm, "measure", plots_dir)
+    do.call(grid.arrange, measure_profiles)
+
+  }
+  
 }

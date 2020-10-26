@@ -28,10 +28,19 @@ process_cell_measurements <- function(data,
                                       lower, 
                                       upper, 
                                       column_cell_table, 
-                                      column_orga_table) {
+                                      column_orga_table,
+                                      filter) {
   
-  data_filter <- subset(data, 
-                        Ferets >= lower & Ferets <= upper)
+  if (filter) {
+    
+    data_filter <- subset(data, 
+                          Ferets >= lower & Ferets <= upper)
+    
+  } else {
+    
+    data_filter <- data
+    
+  }
   
   # background subtraction for mean organelle intensity per cell
   data_filter$MeanOrgaBackSub <- 

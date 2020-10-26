@@ -24,8 +24,15 @@ source("plot_profiles.R")
 #
 #         BUGS:
 #        NOTES: 
-# DEPENDENCIES: ggplot2: install.packages("ggplot2")
+# DEPENDENCIES: 
+#               
+#               shiny: install.packages("shiny")
+#               shinyFiles: install.packages("shinyFiles")
+#               openxlsx: install.packages("openxlsx")
+#               ggplot2: install.packages("ggplot2")
 #               gridExtra: install.packages("gridExtra")
+#               tidyverse: install.packages("tidyverse")
+#               lazyeval: install.packages("lazyeval")
 #
 #      VERSION: 0.1.0
 #      CREATED: 2020-10-01
@@ -53,7 +60,7 @@ ui <- fluidPage(
                     
                     column(width = 5, offset = 0,
                            
-                      h3("Processing:"),
+                      h3("Map distance:"),
                       
                       radioButtons("series_type", 
                                    "Data set type",
@@ -79,6 +86,16 @@ ui <- fluidPage(
                                   max = 1000, 
                                   value = c(0, 600)),
                       
+                      checkboxInput("filter_ferets", 
+                                    "Filter by ferets diameter?", 
+                                    value = TRUE),
+                      
+                      sliderInput("limit_norm_distance", 
+                                  "Range of normalized distance:",
+                                  min = 0, 
+                                  max = 1, 
+                                  value = 0.7),
+                      
                       checkboxInput("plot_background_subtract", 
                                     "Subtract background in plots?", 
                                     value = TRUE),
@@ -86,23 +103,12 @@ ui <- fluidPage(
                     
                     column(width = 5, offset = 2,
                            
-                      h3("Intensity profile:"),
+                      h3("Map intensity:"),
                       
                       checkboxInput("analyze_signal_profiles", 
                                     "Analyze signal profiles?", 
                                     value = FALSE),
-                    
-                      # plot ranges
-                      numericInput("bin_width_norm", 
-                                   "Bin width normalized profiles:", 
-                                   value = 0.05), 
-                      
-                      sliderInput("limit_norm", 
-                                  "Range of normalized profiles:",
-                                  min = 0, 
-                                  max = 1, 
-                                  value = 0.7),
-                      
+                 
                       numericInput("bin_width", 
                                    "Bin width raw distance (µm):", 
                                    value = 2),  
@@ -111,7 +117,19 @@ ui <- fluidPage(
                                   "Range of raw distance plot",
                                   min = 0, 
                                   max = 1000, 
-                                  value = 75)
+                                  value = 75),
+                      
+                      # plot ranges
+                      numericInput("bin_width_norm", 
+                                   "Bin width normalized profiles:", 
+                                   value = 0.05), 
+                      
+                      sliderInput("limit_norm_profile", 
+                                  "Range of normalized profile:",
+                                  min = 0, 
+                                  max = 1, 
+                                  value = 0.7)
+                      
                     )
                   ),
                   
@@ -195,34 +213,59 @@ server <- function(input, output, session) {
     
     # path to folder where the directories for the measurements are
     directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
+    # directory <- global$datapath
     
-    result_name = "Analysis_test"
+    # result_name = "Analysis_test"
+    result_name <- input$resultname
     
     # filter for feret's diameter
-    feret_lower = 0
-    feret_upper = 600
+    feret_filter <- input$filter_ferets
+    
+    # feret_lower = 0
+    feret_lower <- input$feret_limits[1]
+    
+    # feret_upper = 600
+    feret_upper <- input$feret_limits[2]
     
     # determine range for plots
-    norm_distance_nucleus = 0.7
+    # norm_distance_nucleus = 0.7
+    norm_distance_nucleus <- input$limit_norm_distance
     
     # TODO if file contains series number or the already present column
     # needs to default to something sensible if not possible
+    series_type <- input$series_type
+    
     single_series = FALSE
-    series_regex = "(?<=_)\\d*($)"
     
-    # TODO apply background subtraction for plots
-    plot_background_subtract = TRUE
+    if (series_type == 1) {
+      
+      single_series = TRUE
+      
+    } else if (series_type == 2) {
+      
+      single_series = FALSE
+      
+    }
+
+    # series_regex = "(?<=_)\\d*($)"
+    series_regex <- input$series_regex
     
-    # analyze signal profiles
-    analyze_signal_profiles = TRUE
+    # plot_background_subtract = TRUE
+    plot_background_subtract <- input$plot_background_subtract
+    
+    # analyze_signal_profiles = TRUE
+    analyze_signal_profiles <- input$analyze_signal_profiles
     
     # Binning for intensity profiles
-    # or different method for binning
-    upper_limit_norm = 1
-    bin_width_norm = 0.05
+    # upper_limit_norm = 1
+    upper_limit_norm <-  input$limit_norm_profile
+    # bin_width_norm = 0.05
+    bin_width_norm <- input$bin_width_norm
     
-    upper_limit = 75
-    bin_width = 2
+    # upper_limit = 75
+    upper_limit <- input$limit_raw
+    # bin_width = 2
+    bin_width <- input$bin_width
     
     # ==============================================================================
     # where to save the data
@@ -254,7 +297,8 @@ server <- function(input, output, session) {
                                                      feret_lower, 
                                                      feret_upper,
                                                      cell_column,
-                                                     orga_column)
+                                                     orga_column,
+                                                     feret_filter)
     
     merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
                                                       organelle_distance,

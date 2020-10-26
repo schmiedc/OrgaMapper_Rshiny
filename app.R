@@ -149,17 +149,23 @@ ui <- fluidPage(
                   
                   fluidRow(
                     
-                    tags$hr(),
-                    tags$p("Author: Christopher Schmied"),
-                    tags$p("Contact: schmied@fmp-berlin.de"),
-                    tags$p("Cellular Imaging - Core facility")
+                    column(width = 6, offset = 0,
+                      
+                      hr(),
+                      tags$p("Christopher Schmied"),
+                      tags$p("schmied@fmp-berlin.de"),
+                      tags$p("Cellular Imaging - Core facility")
+                      
+                    ),
                     
-                  ),
-                  
-                  fluidRow(
-                    tags$img(width = 300, src='Logo.png')
+                    column(width = 4, offset = 0,
+                           
+                      tags$img(width = 190, src='Logo_mid.png')
+                      
+                    )
+                    
                   )
-                  
+
                 ),
                 
                 mainPanel(

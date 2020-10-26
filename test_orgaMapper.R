@@ -1,5 +1,10 @@
 setwd("/data1/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
 
+packages <- c("shiny", "shinyFiles", "openxlsx", "ggplot2", "gridExtra", "tidyverse", "lazyeval")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())))  
+}
+
 library("openxlsx")
 library(gridExtra)
 source("process_data.R")
@@ -14,6 +19,7 @@ directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
 result_name = "Analysis_test"
 
 # filter for feret's diameter
+feret_filter = TRUE
 feret_lower = 0
 feret_upper = 600
 
@@ -69,7 +75,8 @@ cell_measure_filter <- process_cell_measurements(cell_measure,
                                                  feret_lower, 
                                                  feret_upper,
                                                  cell_column,
-                                                 orga_column)
+                                                 orga_column,
+                                                 feret_filter)
 
 merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
                                                   organelle_distance,

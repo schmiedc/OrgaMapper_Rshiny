@@ -1,4 +1,10 @@
 setwd("/data1/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
+
+packages <- c("shiny", "shinyFiles", "openxlsx", "ggplot2", "gridExtra", "tidyverse", "lazyeval")
+if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  install.packages(setdiff(packages, rownames(installed.packages())))  
+}
+
 library(gridExtra)
 library(shiny)
 library(shinyFiles)
@@ -114,18 +120,18 @@ ui <- fluidPage(
                                    value = 2),  
                       
                       sliderInput("limit_raw", 
-                                  "Range of raw distance plot",
+                                  "Range of raw distance (µm):",
                                   min = 0, 
                                   max = 1000, 
                                   value = 75),
                       
                       # plot ranges
                       numericInput("bin_width_norm", 
-                                   "Bin width normalized profiles:", 
+                                   "Bin width normalized distance:", 
                                    value = 0.05), 
                       
                       sliderInput("limit_norm_profile", 
-                                  "Range of normalized profile:",
+                                  "Range of normalized distance:",
                                   min = 0, 
                                   max = 1, 
                                   value = 0.7)
@@ -218,7 +224,7 @@ server <- function(input, output, session) {
     # result_name = "Analysis_test"
     result_name <- input$resultname
     
-    # filter for feret's diameter
+    # feret_filter = TRUE
     feret_filter <- input$filter_ferets
     
     # feret_lower = 0

@@ -217,9 +217,13 @@ server <- function(input, output, session) {
   
   observeEvent(input$processData, {
     
+    tryCatch({
+    
     # path to folder where the directories for the measurements are
-    directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
-    # directory <- global$datapath
+    # directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
+    directory <- global$datapath
+    directory <- paste0(directory, .Platform$file.sep)
+    
     
     # result_name = "Analysis_test"
     result_name <- input$resultname
@@ -435,9 +439,18 @@ server <- function(input, output, session) {
       
     })
     
+  }, error=function(e) {
+    
+    message(e)
+    
+  }, warning=function(w) {
+    
+    message(w)
+    
+  })
+    
   })
 
-  
 }
 
 # Run the application

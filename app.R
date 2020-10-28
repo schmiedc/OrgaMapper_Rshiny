@@ -112,7 +112,7 @@ ui <- fluidPage(
                       h3("Map intensity:"),
                       
                       checkboxInput("analyze_signal_profiles", 
-                                    "Analyze signal profiles?", 
+                                    "Map intensity?", 
                                     value = FALSE),
                  
                       numericInput("bin_width", 
@@ -175,8 +175,8 @@ ui <- fluidPage(
                               # takes outputId plot
                               tabPanel("Cell Measurements", plotOutput("cell_plots", height=1200)),
                               tabPanel("Organelle Measurements", plotOutput("orga_plots", height=1200)),
-                              tabPanel("Organelle Profile", plotOutput("intProfile_organelle", height=1200)),
-                              tabPanel("Measurement Profile", plotOutput("intProfile_measure", height=1200))
+                              tabPanel("Organelle Intensity Map", plotOutput("intProfile_organelle", height=1200)),
+                              tabPanel("Measurement Intensity Map", plotOutput("intProfile_measure", height=1200))
                   )
                   
                 )
@@ -266,7 +266,7 @@ server <- function(input, output, session) {
       plot_background_subtract <- input$plot_background_subtract
       
       # analyze_signal_profiles = TRUE
-      analyze_signal_profiles <- input$analyze_signal_profiles
+      intensity_profiles <- input$analyze_signal_profiles
       
       # Binning for intensity profiles
       # upper_limit_norm = 1
@@ -366,7 +366,25 @@ server <- function(input, output, session) {
       # ------------------------------------------------------------------------------
       incProgress(1/progress, detail = paste("Processing intensity data", 4))
       
-      if (analyze_signal_profiles) {
+      output$cell_plots <- renderPlot({
+        
+        cell <- do.call(grid.arrange, cell_plots)
+        
+        print(cell)
+        
+      })
+      
+      output$orga_plots <- renderPlot({
+        
+        orga <- do.call(grid.arrange, detection_plots)
+        
+        print(orga)
+        
+      })
+
+      if (intensity_profiles) {
+        
+        print("Processing data for intensity maps")
         
         name_value_measure = "intDistance.csv"
         
@@ -404,49 +422,38 @@ server <- function(input, output, session) {
         
         incProgress(1/progress, detail = paste("Plotting intensity maps", 6))
         
-        profile_plot <- plot_profiles(value_list, 
+        organelle_profile <- plot_profiles(value_list, 
                                       value_list_norm, 
                                       "organelle", 
                                       plots_dir, 
                                       plot_background_subtract)
+
+        output$intProfile_organelle <- renderPlot({
+          
+          intProfile_orga <- do.call(grid.arrange, organelle_profile)
+          print(intProfile_orga)
+          
+        })
         
-        
+      
         if (cell_column == 10 && orga_column == 10) {
           
-          measure_profiles <- plot_profiles(value_list, 
+          measure_profile <- plot_profiles(value_list, 
                                             value_list_norm, 
                                             "measure", 
                                             plots_dir, 
                                             plot_background_subtract)
           
-          
           output$intProfile_measure <- renderPlot({
             
-            intProfile_measure <- do.call(grid.arrange, measure_profiles)
-
+            intProfile_meas <- do.call(grid.arrange, measure_profile)
+            print(intProfile_meas)
+            
           })
-          
+           
         } 
-        
-        output$intProfile_organelle <- renderPlot({
-
-          intProfile_organelle <- do.call(grid.arrange, profile_plot)
-
-        })
   
       } 
-      
-      output$cell_plots <- renderPlot({
-        
-        cell_plots <- do.call(grid.arrange, cell_plots)
-        
-      })
-      
-      output$orga_plots <- renderPlot({
-        
-        orga_plots <- do.call(grid.arrange, detection_plots)
-        
-      })
       
       incProgress(1/progress, detail = paste("Done", 7))
       }) # end of progess
@@ -454,10 +461,12 @@ server <- function(input, output, session) {
     }, error=function(e) {
       
       message(e)
+      showNotification(paste0("WARNING:   ", e), type = 'error')
       
     }, warning=function(w) {
       
       message(w)
+      showNotification(paste0("WARNING:   ", w), type = 'warning')
       
     })
       

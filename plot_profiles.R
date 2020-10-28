@@ -38,7 +38,7 @@ plot_profiles <- function(value_collected,
     raw = "raw_bin_measure"
     
   }
-  
+
   # creates summary data for plots
   if (background_subtract) {
     
@@ -64,13 +64,13 @@ plot_profiles <- function(value_collected,
   
   names(summary_value)[4] <- "value"
   names(summary_value_norm)[3] <- "value"
-  
+
   plotlist <- list()
   
   # plot raw data
   raw_profile <- ggplot(data=summary_value, aes(x=reorder(bin,row), y=value, group=Name)) +
-    geom_line(aes(color=Name)) +
-    geom_point(aes(color=Name)) +
+    geom_line(aes(color=Name), na.rm=TRUE) +
+    geom_point(aes(color=Name), na.rm=TRUE) +
     lineplot_theme() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ylab("Fluorescent intensity (A.U.)") +
@@ -86,8 +86,8 @@ plot_profiles <- function(value_collected,
   plotlist[[length(plotlist) + 1 ]] <- raw_profile
 
   profile_norm <- ggplot(data=summary_value_norm, aes(x=bin, y=value, group=Name)) +
-    geom_line(aes(color=Name)) +
-    geom_point(aes(color=Name)) +
+    geom_line(aes(color=Name), na.rm=TRUE) +
+    geom_point(aes(color=Name), na.rm=TRUE) +
     lineplot_theme() + 
     aes(x = fct_inorder(bin)) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
@@ -122,8 +122,8 @@ plot_profiles <- function(value_collected,
   
   # plots peak normalized and distance normalized intensity profiles
   profile_peak <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=Name)) +
-    geom_line(aes(color=Name)) +
-    geom_point(aes(color=Name)) +
+    geom_line(aes(color=Name), na.rm=TRUE) +
+    geom_point(aes(color=Name), na.rm=TRUE) +
     lineplot_theme() + 
     aes(x = fct_inorder(bin)) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +

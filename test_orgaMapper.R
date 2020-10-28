@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
+directory = "/home/schmiedc/Desktop/Test/test_nd2/output/"
 
 result_name = "Analysis_test"
 
@@ -124,7 +124,7 @@ detection_plots <- plot_detection_measurements(merge_cell_organelle,
 do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
 
-if (analyze_signal_profiles) {
+# if (analyze_signal_profiles) {
   
   name_value_measure = "intDistance.csv"
   
@@ -164,8 +164,7 @@ if (analyze_signal_profiles) {
                                 plots_dir, 
                                 plot_background_subtract)
   
-  
-  if (cell_column == 10 && orga_column == 10) {
+  # if (cell_column == 10 && orga_column == 10) {
     
     measure_profiles <- plot_profiles(value_list, 
                                       value_list_norm, 
@@ -175,8 +174,9 @@ if (analyze_signal_profiles) {
     
     do.call(grid.arrange, measure_profiles)
     
-  }
+  # }
   
   do.call(grid.arrange, profile_plot)
   
-}
+# }
+

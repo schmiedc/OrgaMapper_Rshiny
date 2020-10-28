@@ -68,7 +68,7 @@ plot_profiles <- function(value_collected,
   plotlist <- list()
   
   # plot raw data
-  plot_profile <- ggplot(data=summary_value, aes(x=reorder(bin,row), y=value, group=Name)) +
+  raw_profile <- ggplot(data=summary_value, aes(x=reorder(bin,row), y=value, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
     lineplot_theme() +
@@ -77,15 +77,15 @@ plot_profiles <- function(value_collected,
     ggtitle(sprintf("Intensity profile %s channel", channel_string)) +
     xlab("Distance from nucleus (µm)") 
   
-  ggsave(plot = plot_profile,
+  ggsave(plot = raw_profile,
          file=paste0(plots, .Platform$file.sep, sprintf("profile_%s",channel_string), ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
   
-  plotlist[[length(plotlist) + 1 ]] <- plot_profile
+  plotlist[[length(plotlist) + 1 ]] <- raw_profile
 
-  plot_profile_norm <- ggplot(data=summary_value_norm, aes(x=bin, y=value, group=Name)) +
+  profile_norm <- ggplot(data=summary_value_norm, aes(x=bin, y=value, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
     lineplot_theme() + 
@@ -95,13 +95,13 @@ plot_profiles <- function(value_collected,
     xlab("Normalized distance from nucleus") +
     ggtitle(sprintf("Norm profile %s channel", channel_string))
   
-  ggsave(plot = plot_profile_norm,
+  ggsave(plot = profile_norm,
          file=paste0(plots, .Platform$file.sep, sprintf("NormProfile_%s",channel_string), ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
   
-  plotlist[[length(plotlist) + 1 ]] <- plot_profile_norm
+  plotlist[[length(plotlist) + 1 ]] <- profile_norm
   
   # peak normalisation
   name_count_value <- as.data.frame(table(summary_value_norm$Name))
@@ -121,7 +121,7 @@ plot_profiles <- function(value_collected,
   norm_list_value <- do.call("rbind", value_list)
   
   # plots peak normalized and distance normalized intensity profiles
-  plot_profile_peak <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=Name)) +
+  profile_peak <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=Name)) +
     geom_line(aes(color=Name)) +
     geom_point(aes(color=Name)) +
     lineplot_theme() + 
@@ -131,13 +131,13 @@ plot_profiles <- function(value_collected,
     xlab("Normalized distance from Nucleus") +
     ggtitle(sprintf("Peak norm profile %s channel", channel_string))
   
-  ggsave(plot = plot_profile_peak,
+  ggsave(plot = profile_peak,
          file=paste0(plots, .Platform$file.sep, sprintf("PeakNormProfile_%s",channel_string), ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
   
-  plotlist[[length(plotlist) + 1 ]] <- plot_profile_peak
+  plotlist[[length(plotlist) + 1 ]] <- profile_peak
   
   return (plotlist)
 }

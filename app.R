@@ -40,9 +40,9 @@ source("plot_profiles.R")
 #               tidyverse: install.packages("tidyverse")
 #               lazyeval: install.packages("lazyeval")
 #
-#      VERSION: 0.1.0
+#      VERSION: 0.2.0
 #      CREATED: 2020-10-01
-#     REVISION: 2020-10-22
+#     REVISION: 2020-10-28
 #
 # ============================================================================
 ui <- fluidPage( 

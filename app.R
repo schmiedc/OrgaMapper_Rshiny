@@ -397,7 +397,7 @@ server <- function(input, output, session) {
                                                          bin_width,
                                                          upper_limit_norm,
                                                          bin_width_norm)
-        
+        print("Saving data of intensity maps")
         value_list <- profile_collected$raw
         value_list_norm <- profile_collected$norm
         
@@ -422,6 +422,7 @@ server <- function(input, output, session) {
         
         incProgress(1/progress, detail = paste("Plotting intensity maps", 6))
         
+        print("Plotting intensity maps")
         organelle_profile <- plot_profiles(value_list, 
                                       value_list_norm, 
                                       "organelle", 

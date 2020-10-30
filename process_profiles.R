@@ -69,9 +69,19 @@ collect_individual_profiles <- function(inputdir,
   value_list_norm <- list()
   value_list <- list()
   
+  print("Retrieving individual files")
+  
   for (name in value_filenames) {
     
+    print(paste("Processing file: ", name))
+    
     value_measure  <- read.csv(name, header = TRUE)
+    
+    # check if intDistance.csv is empty if true skip
+    if(nrow(value_measure) == 0) {
+      print(paste("Skipping file: ", name))
+      next
+    }
     
     # TODO needs to default to something that is sensible if invalid
     if (series) {
@@ -87,29 +97,34 @@ collect_individual_profiles <- function(inputdir,
     
     value_col = ncol(value_measure)
     
+    print("Merging with cell data")
     merge_table_value <- process_profile_data(value_measure,
                                               cell_measure_data,
                                               cell_col,
                                               value_col)
     
+    print("Bin normalized distance of intensity background subtracted values")
     value_result_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                              merge_table_value$orgaIntBackSub, 
                                              "backsub_bin_orga_norm",
                                              width_norm,
                                              limit_norm)
     
+    print("Bin raw distance of intensity background subtracted values")
     value_result <- bin_distance_values(merge_table_value$DistanceCal, 
                                         merge_table_value$orgaIntBackSub, 
                                         "backsub_bin_orga",
                                         width,
                                         limit)
     
+    print("Bin normalized distance of intensity raw values")
     value_result_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                  merge_table_value$orgaInt, 
                                                  "raw_bin_orga_norm",
                                                  width_norm,
                                                  limit_norm)
     
+    print("Bin raw distance of intensity raw values")
     value_result_raw <- bin_distance_values(merge_table_value$DistanceCal, 
                                             merge_table_value$orgaInt, 
                                             "raw_bin_orga",
@@ -121,6 +136,7 @@ collect_individual_profiles <- function(inputdir,
     
     if (cell_col == 12 && value_col == 9) {
       
+      print("Mapping measurement channel")
       binned_measure_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                                        merge_table_value$measureIntBackSub, 
                                                        "backsub_bin_measure_norm",

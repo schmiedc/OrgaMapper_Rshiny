@@ -142,8 +142,7 @@ do.call(grid.arrange, detection_plots)
   value_list_norm <- profile_collected$norm
   rownames(value_list) <- c()
   rownames(value_list_norm) <- c()
-  
-  head(pvalue_list)
+
   # ------------------------------------------------------------------------------
   write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
              value_list, 
@@ -167,7 +166,7 @@ do.call(grid.arrange, detection_plots)
                                 plots_dir, 
                                 plot_background_subtract)
   
-  # if (cell_column == 10 && orga_column == 10) {
+  if (cell_column == 10 && orga_column == 10) {
     
     measure_profiles <- plot_profiles(value_list, 
                                       value_list_norm, 
@@ -177,7 +176,7 @@ do.call(grid.arrange, detection_plots)
     
     do.call(grid.arrange, measure_profiles)
     
-  # }
+  }
   
   do.call(grid.arrange, profile_plot)
   

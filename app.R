@@ -401,6 +401,10 @@ server <- function(input, output, session) {
         value_list <- profile_collected$raw
         value_list_norm <- profile_collected$norm
         
+        # delete row names
+        rownames(value_list) <- c()
+        rownames(value_list_norm) <- c()
+        
         # ------------------------------------------------------------------------------
         incProgress(1/progress, detail = paste("Saving intensity data", 5))
         

@@ -86,12 +86,12 @@ collect_individual_profiles <- function(inputdir,
     # TODO needs to default to something that is sensible if invalid
     if (series) {
       
-      value_measure$Series <- str_extract(value_measure$Name, series_regex)
+      value_measure$Series <- str_extract(value_measure$Name, regular_expression)
       
-      value_measure$Name <- str_remove(value_measure$Name, series_regex)
+      value_measure$Name <- str_remove(value_measure$Name, regular_expression)
       
       # removes trailing underscore or hypen
-      value_measure$Name <- str_remove(value_measure$Name, regular_expression)
+      value_measure$Name <- str_remove(value_measure$Name, "(_|-| )($)")
       
     }
     
@@ -102,7 +102,7 @@ collect_individual_profiles <- function(inputdir,
                                               cell_measure_data,
                                               cell_col,
                                               value_col)
-    
+
     print("Bin normalized distance of intensity background subtracted values")
     value_result_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
                                              merge_table_value$orgaIntBackSub, 

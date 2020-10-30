@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/Test/test_nd2/output/"
+directory = "/data2/shared_data/OrgaMapper_Data/size_MTM1KOvsWT/output/"
 
 result_name = "Analysis_test"
 
@@ -28,7 +28,7 @@ norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = FALSE
+single_series = TRUE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
@@ -140,7 +140,10 @@ do.call(grid.arrange, detection_plots)
   
   value_list <- profile_collected$raw
   value_list_norm <- profile_collected$norm
+  rownames(value_list) <- c()
+  rownames(value_list_norm) <- c()
   
+  head(pvalue_list)
   # ------------------------------------------------------------------------------
   write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
              value_list, 

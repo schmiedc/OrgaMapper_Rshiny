@@ -107,28 +107,28 @@ collect_individual_profiles <- function(inputdir,
     print("Bin normalized distance of intensity background subtracted values")
     value_result_norm <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
                                              merge_table_value$orgaIntensityBacksub, 
-                                             "backsub_bin_orga_norm",
+                                             "orgaIntensityBacksub_BinNorm",
                                              width_norm,
                                              limit_norm)
     
     print("Bin raw distance of intensity background subtracted values")
     value_result <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
                                         merge_table_value$orgaIntensityBacksub, 
-                                        "backsub_bin_orga",
+                                        "orgaIntensityBacksub_Bin",
                                         width,
                                         limit)
     
     print("Bin normalized distance of intensity raw values")
     value_result_norm_raw <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
                                                  merge_table_value$orgaIntensity, 
-                                                 "raw_bin_orga_norm",
+                                                 "orgaIntensity_BinNorm",
                                                  width_norm,
                                                  limit_norm)
     
     print("Bin raw distance of intensity raw values")
     value_result_raw <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
                                             merge_table_value$orgaIntensity, 
-                                            "raw_bin_orga",
+                                            "orgaIntensity_Bin",
                                             width,
                                             limit)
     
@@ -140,25 +140,25 @@ collect_individual_profiles <- function(inputdir,
       print("Mapping measurement channel")
       binned_measure_value_norm <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
                                                        merge_table_value$measureIntensityBackSub, 
-                                                       "backsub_bin_measure_norm",
+                                                       "measureIntensityBacksub_BinNorm",
                                                        width_norm,
                                                        limit_norm)
       
       binned_measure_value <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
                                                   merge_table_value$measureIntensityBackSub, 
-                                                  "backsub_bin_measure",
+                                                  "measureIntensityBacksub_Bin",
                                                   width,
                                                   limit)
       
       binned_measure_value_norm_raw <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
                                                            merge_table_value$measureIntensity, 
-                                                           "raw_bin_measure_norm",
+                                                           "measureIntensity_BinNorm",
                                                            width_norm,
                                                            limit_norm)
       
       binned_measure_value_raw <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
                                                       merge_table_value$measureIntensity, 
-                                                      "raw_bin_measure",
+                                                      "measureIntensity_Bin",
                                                       width,
                                                       limit)
       

@@ -25,17 +25,17 @@ plot_profiles <- function(value_collected,
   
   if (channel_string == "organelle") {
     
-    backsub_norm = "backsub_bin_orga_norm"
-    backsub = "backsub_bin_orga"
-    raw_norm = "raw_bin_orga_norm"
-    raw = "raw_bin_orga"
+    backsub_norm = "orgaIntensityBacksub_BinNorm"
+    backsub = "orgaIntensityBacksub_Bin"
+    raw_norm = "orgaIntensity_BinNorm"
+    raw = "orgaIntensity_Bin"
     
   } else if (channel_string == "measure") {
     
-    backsub_norm = "backsub_bin_measure_norm"
-    backsub = "backsub_bin_measure"
-    raw_norm = "raw_bin_measure_norm"
-    raw = "raw_bin_measure"
+    backsub_norm = "measureIntensityBacksub_BinNorm"
+    backsub = "measureIntensityBacksub_Bin"
+    raw_norm = "measureIntensity_BinNorm"
+    raw = "measureIntensity_Bin"
     
   }
 
@@ -43,21 +43,21 @@ plot_profiles <- function(value_collected,
   if (background_subtract) {
     
     summary_value_norm <- value_norm_collected %>% 
-      group_by(Name, bin) %>% 
+      group_by(identifier, bin) %>% 
       summarise(across(interp(backsub_norm), mean, na.rm =TRUE ))
     
     summary_value <- value_collected %>% 
-      group_by(Name, bin, row) %>% 
+      group_by(identifier, bin, row) %>% 
       summarise(across(interp(backsub), mean, na.rm =TRUE ))
     
   } else {
     
     summary_value_norm <- value_norm_collected %>% 
-      group_by(Name, bin) %>% 
+      group_by(identifier, bin) %>% 
       summarise(across(interp(raw_norm), mean, na.rm =TRUE ))
     
     summary_value <- value_collected %>% 
-      group_by(Name, bin, row) %>% 
+      group_by(identifier, bin, row) %>% 
       summarise(across(interp(raw), mean, na.rm =TRUE ))
     
   }
@@ -68,9 +68,9 @@ plot_profiles <- function(value_collected,
   plotlist <- list()
   
   # plot raw data
-  raw_profile <- ggplot(data=summary_value, aes(x=reorder(bin,row), y=value, group=Name)) +
-    geom_line(aes(color=Name), na.rm=TRUE) +
-    geom_point(aes(color=Name), na.rm=TRUE) +
+  raw_profile <- ggplot(data=summary_value, aes(x=reorder(bin,row), y=value, group=identifier)) +
+    geom_line(aes(color=identifier), na.rm=TRUE) +
+    geom_point(aes(color=identifier), na.rm=TRUE) +
     lineplot_theme() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ylab("Fluorescent intensity (A.U.)") +
@@ -85,9 +85,9 @@ plot_profiles <- function(value_collected,
   
   plotlist[[length(plotlist) + 1 ]] <- raw_profile
 
-  profile_norm <- ggplot(data=summary_value_norm, aes(x=bin, y=value, group=Name)) +
-    geom_line(aes(color=Name), na.rm=TRUE) +
-    geom_point(aes(color=Name), na.rm=TRUE) +
+  profile_norm <- ggplot(data=summary_value_norm, aes(x=bin, y=value, group=identifier)) +
+    geom_line(aes(color=identifier), na.rm=TRUE) +
+    geom_point(aes(color=identifier), na.rm=TRUE) +
     lineplot_theme() + 
     aes(x = fct_inorder(bin)) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
@@ -104,12 +104,12 @@ plot_profiles <- function(value_collected,
   plotlist[[length(plotlist) + 1 ]] <- profile_norm
   
   # peak normalisation
-  name_count_value <- as.data.frame(table(summary_value_norm$Name))
+  name_count_value <- as.data.frame(table(summary_value_norm$identifier))
   value_list <- list()
   
   for (name in name_count_value$Var1){
     
-    data_per_name <- subset(summary_value_norm, Name == name)
+    data_per_name <- subset(summary_value_norm, identifier == name)
     max_value_profiles = max(data_per_name$value, na.rm = TRUE)
     data_per_name$peak_norm <- sapply(data_per_name$value, function(x){x /  max_value_profiles})
     
@@ -121,9 +121,9 @@ plot_profiles <- function(value_collected,
   norm_list_value <- do.call("rbind", value_list)
   
   # plots peak normalized and distance normalized intensity profiles
-  profile_peak <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=Name)) +
-    geom_line(aes(color=Name), na.rm=TRUE) +
-    geom_point(aes(color=Name), na.rm=TRUE) +
+  profile_peak <- ggplot(data=norm_list_value, aes(x=bin, y=peak_norm, group=identifier)) +
+    geom_line(aes(color=identifier), na.rm=TRUE) +
+    geom_point(aes(color=identifier), na.rm=TRUE) +
     lineplot_theme() + 
     aes(x = fct_inorder(bin)) + 
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +

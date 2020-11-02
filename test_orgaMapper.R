@@ -166,9 +166,7 @@ do.call(grid.arrange, detection_plots)
              row.names=TRUE, 
              append=FALSE, 
              showNA=TRUE)
-  
-  
-  
+
   profile_plot <- plot_profiles(value_list, 
                                 value_list_norm, 
                                 "organelle", 

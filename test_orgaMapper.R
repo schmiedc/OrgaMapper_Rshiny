@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-11-02_output"
+directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-11-02_output/"
 
 result_name = "Analysis_test"
 
@@ -28,7 +28,7 @@ norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = TRUE
+single_series = FALSE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
@@ -91,6 +91,8 @@ merged_summary <- create_summary_table(merge_cell_organelle,
                                        cell_measure_filter)
 
 # ------------------------------------------------------------------------------
+# TODO needs renaming for result tables
+# ------------------------------------------------------------------------------
 # save processed data
 write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
            merge_cell_organelle, 
@@ -146,7 +148,8 @@ do.call(grid.arrange, detection_plots)
   value_list_norm <- profile_collected$norm
   rownames(value_list) <- c()
   rownames(value_list_norm) <- c()
-
+  # ------------------------------------------------------------------------------
+  # TODO needs renaming for result tables
   # ------------------------------------------------------------------------------
   write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
              value_list, 

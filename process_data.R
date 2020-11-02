@@ -12,11 +12,11 @@ read_collected_files <- function(inputdir,
   # TODO needs to default to sensible value if nothing found
   if (series_switch) {
     
-    file$Series <- str_extract(file$Name, series_regex)
+    file$Series <- str_extract(file$name, series_regex)
     
-    file$Name <- str_remove(file$Name, series_regex)
+    file$Name <- str_remove(file$name, series_regex)
 
-    file$Name <- str_remove(file$Name, "(_|-| )($)")
+    file$Name <- str_remove(file$name, "(_|-| )($)")
 
   }
   
@@ -34,7 +34,7 @@ process_cell_measurements <- function(data,
   if (filter) {
     
     data_filter <- subset(data, 
-                          Ferets >= lower & Ferets <= upper)
+                          ferets >= lower & ferets <= upper)
     
   } else {
     
@@ -43,13 +43,13 @@ process_cell_measurements <- function(data,
   }
   
   # background subtraction for mean organelle intensity per cell
-  data_filter$MeanOrgaBackSub <- 
-    data_filter$MeanValueOrga - data_filter$MeanBackgroundOrga
+  data_filter$orgaMeanIntensityBacksub <- 
+    data_filter$orgaMeanIntensity - data_filter$orgaMeanBackground
   
   if (column_cell_table == 10 && column_orga_table == 10) {
     
-    data_filter$MeanMeasureBackSub <- 
-      data_filter$MeanValueMeasure - data_filter$MeanBackgroundMeasure
+    data_filter$measureMeanIntensityBacksub <- 
+      data_filter$measureMeanIntensity - data_filter$measureMeanBackground
     
   }
   
@@ -64,18 +64,18 @@ process_orga_measurements <- function(cell_data,
   
   merge <- merge(cell_data,
                  orga_data,
-                 by = c("Name", "Series", "Cell"))
+                 by = c("name", "series", "cell"))
   
   # background subtraction for detection intensity
-  merge$PeakDetectBackSub <- merge$PeakDetectionInt - merge$MeanBackgroundOrga
+  merge$orgaDetectionPeakBacksub <- merge$orgaDetectionPeak - merge$orgaMeanBackground
   
   if (column_cell_table == 10 && column_orga_table == 10) {
     
-    merge$PeakMeasureBackSub <- merge$PeakMeasureInt - merge$MeanBackgroundMeasure
+    merge$measureDetectionPeakBacksub <- merge$measureDetectionPeak - merge$measureMeanBackground
     
   }
   
-  merge$DistanceNorm <- merge$DistanceCal / merge$Ferets
+  merge$detectionDistanceNormalized <- merge$detectionDistanceCalibrated / merge$ferets
   
   return (merge)
   
@@ -85,13 +85,13 @@ create_summary_table <- function(full_table,
                                  cell_data) {
   
   summary <- full_table %>% 
-    group_by(Name, Series, Cell) %>% 
-    summarise(across(DistanceRaw:DistanceNorm, mean, na.rm =TRUE ), .groups = 'drop') %>% 
-    rename_at(vars(-Name, -Series, -Cell),function(x) paste0(x,".mean"))
+    group_by(name, series, cell) %>% 
+    summarise(across(detectionDistanceRaw:detectionDistanceNormalized, mean, na.rm =TRUE ), .groups = 'drop') %>% 
+    rename_at(vars(-name, -series, -cell),function(x) paste0(x,".mean"))
   
   merge <- merge(cell_data,
                  summary, 
-                 by = c("Name", "Series", "Cell"))
+                 by = c("name", "series", "cell"))
   
   return (merge)
   

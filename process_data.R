@@ -1,22 +1,22 @@
 library(tidyverse)
 
 read_collected_files <- function(inputdir, 
-                                 name, 
+                                 file_name_string, 
                                  series_switch, 
                                  series_regex) {
   
-  file_name <- paste0(inputdir,name)
+  file_name <- paste0(inputdir,file_name_string)
   
   file <- read.csv(file_name, header = TRUE)
   
   # TODO needs to default to sensible value if nothing found
   if (series_switch) {
     
-    file$Series <- str_extract(file$name, series_regex)
+    file$Series <- str_extract(file$identifier, series_regex)
     
-    file$Name <- str_remove(file$name, series_regex)
+    file$Name <- str_remove(file$identifier, series_regex)
 
-    file$Name <- str_remove(file$name, "(_|-| )($)")
+    file$Name <- str_remove(file$identifier, "(_|-| )($)")
 
   }
   
@@ -64,7 +64,7 @@ process_orga_measurements <- function(cell_data,
   
   merge <- merge(cell_data,
                  orga_data,
-                 by = c("name", "series", "cell"))
+                 by = c("identifier", "series", "cell"))
   
   # background subtraction for detection intensity
   merge$orgaDetectionPeakBacksub <- merge$orgaDetectionPeak - merge$orgaMeanBackground
@@ -85,13 +85,13 @@ create_summary_table <- function(full_table,
                                  cell_data) {
   
   summary <- full_table %>% 
-    group_by(name, series, cell) %>% 
+    group_by(identifier, series, cell) %>% 
     summarise(across(detectionDistanceRaw:detectionDistanceNormalized, mean, na.rm =TRUE ), .groups = 'drop') %>% 
-    rename_at(vars(-name, -series, -cell),function(x) paste0(x,".mean"))
+    rename_at(vars(-identifier, -series, -cell),function(x) paste0(x,".mean"))
   
   merge <- merge(cell_data,
                  summary, 
-                 by = c("name", "series", "cell"))
+                 by = c("identifier", "series", "cell"))
   
   return (merge)
   

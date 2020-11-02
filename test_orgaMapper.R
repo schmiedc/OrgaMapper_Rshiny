@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-11-02_output/"
+directory = "/home/schmiedc/Desktop/Test/test_nd2/output/"
 
 result_name = "Analysis_test"
 
@@ -114,7 +114,7 @@ write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""),
 # ------------------------------------------------------------------------------
 # plot data
 cell_plots <- plot_cell_measurements(cell_measure_filter,
-                                     plots_dir,
+                                     plots_distance,
                                      cell_column,
                                      orga_column,
                                      plot_background_subtract)
@@ -166,6 +166,8 @@ do.call(grid.arrange, detection_plots)
              row.names=TRUE, 
              append=FALSE, 
              showNA=TRUE)
+  
+  head()
   
   profile_plot <- plot_profiles(value_list, 
                                 value_list_norm, 

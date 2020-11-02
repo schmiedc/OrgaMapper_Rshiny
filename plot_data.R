@@ -107,17 +107,17 @@ plot_cell_measurements <- function(cell_data_table,
   
   if (background_subtract) {
     
-    organelle_intensity_cell = "MeanOrgaBackSub"
+    organelle_intensity_cell = "orgaMeanIntensityBacksub"
     
   } else {
     
-    organelle_intensity_cell = "MeanValueOrga"
+    organelle_intensity_cell = "orgaMeanIntensity"
     
   }
   
-  measure1 <- list("Ferets", 
-                   "CellArea", 
-                   "NumDetections",
+  measure1 <- list("ferets", 
+                   "cellArea", 
+                   "numberDetections",
                    organelle_intensity_cell)
   
   measure1_title <- list("Average Feret's diameter", 
@@ -134,17 +134,17 @@ plot_cell_measurements <- function(cell_data_table,
                         "cellArea", 
                         "numDetections", 
                         "intPerCellDetection")
-  
+
   cell_measure_long <- cell_data_table %>% 
-    pivot_longer(cols=Ferets:MeanOrgaBackSub,values_to = "measurement" )
-  
+    pivot_longer(cols=ferets:orgaMeanIntensityBacksub,values_to = "measurement")
+
   plot_list_cell <- list()
   
   for (index in seq_along(measure1)) {
     
     dataSubset <- subset(cell_measure_long, cell_measure_long$name==measure1[index])
     
-    plot_cell <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
+    plot_cell <- ggplot(dataSubset, aes(x=identifier, y=measurement)) +
       geom_boxplot(outlier.size = 0, outlier.shape = 1) +
       stat_boxplot(geom = 'errorbar', width = 0.2) +
       geom_jitter(width = 0.1) +
@@ -172,18 +172,18 @@ plot_cell_measurements <- function(cell_data_table,
     
     if (background_subtract) {
       
-      measure_intensity_cell = "MeanMeasureBackSub"
+      measure_intensity_cell = "measureMeanIntensityBacksub"
       
     } else {
       
-      measure_intensity_cell = "MeanValueMeasure"
+      measure_intensity_cell = "measureMeanIntensity"
       
     }
 
-    cell_measure_filter_new <- cell_data_table[c("Name", measure_intensity_cell)]
+    cell_measure_filter_new <- cell_data_table[c("identifier", measure_intensity_cell)]
     colnames(cell_measure_filter_new)[2] <- "measure"
     
-    plot_cell_measure <- ggplot(cell_measure_filter_new, aes(x=Name, y=measure)) +
+    plot_cell_measure <- ggplot(cell_measure_filter_new, aes(x=identifier, y=measure)) +
       ggtitle("Average intensity in cell (measure channel)") + 
       xlab("Treatment") +
       ylab("fluorescent intensity (A.U.)") +
@@ -199,8 +199,7 @@ plot_cell_measurements <- function(cell_data_table,
            width = 297, 
            height = 210, 
            units = "mm")
-    
-    
+
     }
     
     return (plot_list_cell)
@@ -218,16 +217,17 @@ plot_detection_measurements <- function(full_data_table,
   # lysosome density plots
   plot_list_detection <- list()
   
-  name_count <- as.data.frame(table(full_data_table$Name))
+  name_count <- as.data.frame(table(full_data_table$identifier))
   detect_list <- list()
-  
+
   # goes through each experiment and calculates lysosome density
   # then peak normalizes the lysosome density
   # collects these normalized density plots in detect_list
-  for (name in name_count$Var1){
+  for (name_id in name_count$Var1){
     
-    data_per_name <- subset(full_data_table, Name == name)
-    density_per_name <- density(data_per_name$DistanceNorm, 
+    data_per_name <- subset(full_data_table, identifier == name_id)
+    
+    density_per_name <- density(data_per_name$detectionDistanceNormalized, 
                                 bw = "nrd0", 
                                 n = 512, 
                                 from = 0, 
@@ -240,7 +240,7 @@ plot_detection_measurements <- function(full_data_table,
     # peak normalisation
     max = max(data_frame$y, na.rm = FALSE)
     data_frame$peak_norm <- sapply(data_frame$y, function(x){x /  max})
-    detect_list[[name]] <- data_frame
+    detect_list[[name_id]] <- data_frame
     
   }
   
@@ -251,7 +251,7 @@ plot_detection_measurements <- function(full_data_table,
   norm_list2 <- cbind(norm_list1_indices, norm_list1)
   colnames(norm_list2)[1] <- "name"
   colnames(norm_list2)[2] <- "index"
-  
+
   # Plot Lysosome density vs normalized distance from Nucleus
   # density plots without peak normalized data
   plot_density_raw <- ggplot(norm_list2, aes(x = x, 
@@ -302,16 +302,16 @@ plot_detection_measurements <- function(full_data_table,
   
   if (background_subtract) {
     
-    organelle_intensity_peak = "PeakDetectBackSub.mean"
+    organelle_intensity_peak = "orgaDetectionPeakBacksub.mean"
     
   } else {
     
-    organelle_intensity_peak = "PeakDetectionInt.mean"
+    organelle_intensity_peak = "measureDetectionPeak.mean"
     
   }
   
-  measure2 <- list("DistanceCal.mean", 
-                   "DistanceNorm.mean",
+  measure2 <- list("detectionDistanceCalibrated.mean", 
+                   "detectionDistanceNormalized.mean",
                    organelle_intensity_peak)
   
   measure2_title <- list("Average distance from nucleus", 
@@ -327,7 +327,7 @@ plot_detection_measurements <- function(full_data_table,
                         "intPerDetectionDetectionChannel")
   
   summary_long <- summary_table %>% 
-    pivot_longer(cols=DistanceRaw.mean:DistanceNorm.mean, 
+    pivot_longer(cols=detectionDistanceRaw.mean:detectionDistanceNormalized.mean, 
                  values_to = "measurement" )
   
   
@@ -335,7 +335,7 @@ plot_detection_measurements <- function(full_data_table,
     
     dataSubset <- subset(summary_long, summary_long$name==measure2[index])
     
-    plot_detection <- distancePlot <- ggplot(dataSubset, aes(x=Name, y=measurement)) +
+    plot_detection <- distancePlot <- ggplot(dataSubset, aes(x=identifier, y=measurement)) +
       geom_boxplot(outlier.size = 0, outlier.shape = 1) +
       stat_boxplot(geom = 'errorbar', width = 0.2) +
       geom_jitter(width = 0.1) +
@@ -362,18 +362,18 @@ plot_detection_measurements <- function(full_data_table,
     
     if (background_subtract) {
       
-      measure_intensity_peak = "PeakMeasureBackSub.mean"
+      measure_intensity_peak = "measureDetectionPeakBacksub.mean"
       
     } else {
       
-      measure_intensity_peak = "PeakMeasureInt.mean"
+      measure_intensity_peak = "measureDetectionPeak.mean"
       
     }
     
-    summary_table_new <- summary_table[c("Name", measure_intensity_peak)]
+    summary_table_new <- summary_table[c("identifier", measure_intensity_peak)]
     colnames(summary_table_new)[2] <- "measure"
     
-    plot_peak_measure <- ggplot(summary_table_new, aes(x=Name, y=measure)) +
+    plot_peak_measure <- ggplot(summary_table_new, aes(x=identifier, y=measure)) +
       ggtitle("Average peak detection intensity (measure channel)") + 
       xlab("Treatment") +
       ylab("fluorescent intensity (A.U.)") +

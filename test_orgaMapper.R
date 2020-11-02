@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/data2/shared_data/OrgaMapper_Data/size_MTM1KOvsWT/output/"
+directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-11-02_output"
 
 result_name = "Analysis_test"
 
@@ -51,8 +51,12 @@ out_dir =  directory
 result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
 
 # plot dir
-plots_dir <- file.path(out_dir, "plots", fsep = .Platform$file.sep)
-dir.create(plots_dir, showWarnings = FALSE)
+plots_distance <- file.path(out_dir, "plot_distance_map", fsep = .Platform$file.sep)
+dir.create(plots_distance, showWarnings = FALSE)
+
+# create directory for intensity maps
+plots_intensity <- file.path(out_dir, "plot_intensity_map", fsep = .Platform$file.sep)
+dir.create(plots_intensity, showWarnings = FALSE)
 
 # ==============================================================================
 name_distance = "organelleDistance.csv"
@@ -115,7 +119,7 @@ cell_plots <- plot_cell_measurements(cell_measure_filter,
 
 detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                merged_summary,
-                                               plots_dir,
+                                               plots_distance,
                                                cell_column,
                                                orga_column,
                                                norm_distance_nucleus,
@@ -163,7 +167,7 @@ do.call(grid.arrange, detection_plots)
   profile_plot <- plot_profiles(value_list, 
                                 value_list_norm, 
                                 "organelle", 
-                                plots_dir, 
+                                plots_intensity, 
                                 plot_background_subtract)
   
   if (cell_column == 10 && orga_column == 10) {
@@ -171,7 +175,7 @@ do.call(grid.arrange, detection_plots)
     measure_profiles <- plot_profiles(value_list, 
                                       value_list_norm, 
                                       "measure", 
-                                      plots_dir, 
+                                      plots_intensity, 
                                       plot_background_subtract)
     
     do.call(grid.arrange, measure_profiles)

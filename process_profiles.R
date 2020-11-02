@@ -29,17 +29,18 @@ process_profile_data <- function(value_data,
   # merge cell measurements with intensity profiles
   merge_table <- merge(per_cell_data, 
                              value_data, 
-                             by = c("Name", "Series", "Cell"))
+                             by = c("identifier", "series", "cell"))
   
+  head(merge_table)
   # distance normalization
-  merge_table$DistanceNorm <- merge_table$DistanceCal / merge_table$Ferets
+  merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
   
   # background subtraction for detection intensity
-  merge_table$orgaIntBackSub <- merge_table$orgaInt - merge_table$MeanBackgroundOrga
+  merge_table$orgaIntensityBacksub <- merge_table$orgaIntensity - merge_table$orgaMeanBackground
   
   if (c_col == 12 && v_col == 9) {
     
-    merge_table$measureIntBackSub <- merge_table$measureInt - merge_table$MeanBackgroundMeasure
+    merge_table$measureIntensityBackSub <- merge_table$measureIntensity - merge_table$measureMeanBackground
     
   }
   
@@ -86,12 +87,12 @@ collect_individual_profiles <- function(inputdir,
     # TODO needs to default to something that is sensible if invalid
     if (series) {
       
-      value_measure$Series <- str_extract(value_measure$Name, regular_expression)
+      value_measure$series <- str_extract(value_measure$identifier, regular_expression)
       
-      value_measure$Name <- str_remove(value_measure$Name, regular_expression)
+      value_measure$identifier <- str_remove(value_measure$identifier, regular_expression)
       
       # removes trailing underscore or hypen
-      value_measure$Name <- str_remove(value_measure$Name, "(_|-| )($)")
+      value_measure$identifier <- str_remove(value_measure$identifier, "(_|-| )($)")
       
     }
     
@@ -104,29 +105,29 @@ collect_individual_profiles <- function(inputdir,
                                               value_col)
 
     print("Bin normalized distance of intensity background subtracted values")
-    value_result_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
-                                             merge_table_value$orgaIntBackSub, 
+    value_result_norm <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
+                                             merge_table_value$orgaIntensityBacksub, 
                                              "backsub_bin_orga_norm",
                                              width_norm,
                                              limit_norm)
     
     print("Bin raw distance of intensity background subtracted values")
-    value_result <- bin_distance_values(merge_table_value$DistanceCal, 
-                                        merge_table_value$orgaIntBackSub, 
+    value_result <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
+                                        merge_table_value$orgaIntensityBacksub, 
                                         "backsub_bin_orga",
                                         width,
                                         limit)
     
     print("Bin normalized distance of intensity raw values")
-    value_result_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
-                                                 merge_table_value$orgaInt, 
+    value_result_norm_raw <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
+                                                 merge_table_value$orgaIntensity, 
                                                  "raw_bin_orga_norm",
                                                  width_norm,
                                                  limit_norm)
     
     print("Bin raw distance of intensity raw values")
-    value_result_raw <- bin_distance_values(merge_table_value$DistanceCal, 
-                                            merge_table_value$orgaInt, 
+    value_result_raw <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
+                                            merge_table_value$orgaIntensity, 
                                             "raw_bin_orga",
                                             width,
                                             limit)
@@ -137,26 +138,26 @@ collect_individual_profiles <- function(inputdir,
     if (cell_col == 12 && value_col == 9) {
       
       print("Mapping measurement channel")
-      binned_measure_value_norm <- bin_distance_values(merge_table_value$DistanceNorm, 
-                                                       merge_table_value$measureIntBackSub, 
+      binned_measure_value_norm <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
+                                                       merge_table_value$measureIntensityBackSub, 
                                                        "backsub_bin_measure_norm",
                                                        width_norm,
                                                        limit_norm)
       
-      binned_measure_value <- bin_distance_values(merge_table_value$DistanceCal, 
-                                                  merge_table_value$measureIntBackSub, 
+      binned_measure_value <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
+                                                  merge_table_value$measureIntensityBackSub, 
                                                   "backsub_bin_measure",
                                                   width,
                                                   limit)
       
-      binned_measure_value_norm_raw <- bin_distance_values(merge_table_value$DistanceNorm, 
-                                                           merge_table_value$measureInt, 
+      binned_measure_value_norm_raw <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
+                                                           merge_table_value$measureIntensity, 
                                                            "raw_bin_measure_norm",
                                                            width_norm,
                                                            limit_norm)
       
-      binned_measure_value_raw <- bin_distance_values(merge_table_value$DistanceCal, 
-                                                      merge_table_value$measureInt, 
+      binned_measure_value_raw <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
+                                                      merge_table_value$measureIntensity, 
                                                       "raw_bin_measure",
                                                       width,
                                                       limit)

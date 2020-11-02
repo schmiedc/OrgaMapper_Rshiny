@@ -132,7 +132,7 @@ do.call(grid.arrange, detection_plots)
 
 # if (analyze_signal_profiles) {
   
-  name_value_measure = "intDistance.csv"
+  name_value_measure = "intensityDistance.csv"
   
   profile_collected <- collect_individual_profiles(directory,
                                                    name_value_measure,
@@ -167,7 +167,7 @@ do.call(grid.arrange, detection_plots)
              append=FALSE, 
              showNA=TRUE)
   
-  head()
+  
   
   profile_plot <- plot_profiles(value_list, 
                                 value_list_norm, 

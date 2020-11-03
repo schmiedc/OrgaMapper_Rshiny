@@ -500,22 +500,92 @@ server <- function(input, output, session) {
         # ------------------------------------------------------------------------------
         print("Saving intensity map data")
         incProgress(1/progress, detail = paste("Saving intensity data", 5))
+        # ------------------------------------------------------------------------------
+        if (cell_column == 10 && orga_column == 10) {
+          
+          value_list_result <- value_list %>%
+            rename(
+              cell_area = cellArea,
+              orga_numberOfDetections = numberDetections,
+              orga_intensity = orgaMeanIntensity,
+              orga_background = orgaMeanBackground,
+              measure_intensity = measureMeanIntensity,
+              measure_background = measureMeanBackground,
+              orga_intensity_backsub = orgaMeanIntensityBacksub,
+              measure_intensity_backsub = measureMeanIntensityBacksub,
+              orga_intensityMap_backsub = orgaIntensityBacksub_Bin,
+              orga_intensityMap = orgaIntensity_Bin,
+              measure_intensityMap_backsub = measureIntensityBacksub_Bin,
+              measure_intensityMap = measureIntensity_Bin
+            )
+          
+        } else {
+          
+          value_list_result <- value_list %>%
+            rename(
+              cell_area = cellArea,
+              orga_numberOfDetections = numberDetections,
+              orga_intensity = orgaMeanIntensity,
+              orga_background = orgaMeanBackground,
+              orga_intensity_backsub = orgaMeanIntensityBacksub,
+              orga_intensityMap_backsub = orgaIntensityBacksub_Bin,
+              orga_intensityMap = orgaIntensity_Bin
+            )
+          
+        }
         
         write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
-                   value_list, 
+                   value_list_result, 
                    sheetName="Sheet1",  
                    col.names=TRUE, 
                    row.names=TRUE, 
                    append=FALSE, 
                    showNA=TRUE)
         
+        # ----------------------------------------------------------------------------
+        if (cell_column == 10 && orga_column == 10) {
+          
+          value_list_norm_result <- value_list_norm %>%
+            rename(
+              cell_area = cellArea,
+              orga_numberOfDetections = numberDetections,
+              orga_intensity = orgaMeanIntensity,
+              orga_background = orgaMeanBackground,
+              measure_intensity = measureMeanIntensity,
+              measure_background = measureMeanBackground,
+              orga_intensity_backsub = orgaMeanIntensityBacksub,
+              measure_intensity_backsub = measureMeanIntensityBacksub,
+              orga_intensityMapNorm_backsub = orgaIntensityBacksub_BinNorm,
+              orga_intensityMapNorm = orgaIntensity_BinNorm,
+              measure_intensityMapNorm_backsub = measureIntensityBacksub_BinNorm,
+              measure_intensityMapNorm = measureIntensity_BinNorm
+            )
+          
+        } else {
+          
+          value_list_norm_result <- value_list_norm %>%
+            rename(
+              cell_area = cellArea,
+              orga_numberOfDetections = numberDetections,
+              orga_intensity = orgaMeanIntensity,
+              orga_background = orgaMeanBackground,
+              orga_intensity_backsub = orgaMeanIntensityBacksub,
+              orga_intensityMapNorm_backsub = orgaIntensityBacksub_BinNorm,
+              orga_intensityMapNorm = orgaIntensity_BinNorm
+              
+            )
+          
+        }
+        
         write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
-                   value_list_norm, 
+                   value_list_norm_result, 
                    sheetName="Sheet1",  
                    col.names=TRUE, 
                    row.names=TRUE, 
                    append=FALSE, 
                    showNA=TRUE)
+        
+        # ----------------------------------------------------------------------------
         
         incProgress(1/progress, detail = paste("Plotting intensity maps", 6))
         

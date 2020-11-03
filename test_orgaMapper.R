@@ -269,7 +269,7 @@ do.call(grid.arrange, detection_plots)
         )
       
     }
-  # ----------------------------------------------------------------------------
+  
   write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
              value_list_result, 
              sheetName="Sheet1",  
@@ -312,8 +312,6 @@ do.call(grid.arrange, detection_plots)
       )
     
   }
-  
-  head(value_list_norm_result)
   
   write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
              value_list_norm_result, 

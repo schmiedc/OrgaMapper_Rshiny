@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/Test/test_nd2/output/"
+directory = "/home/schmiedc/Desktop/Test/test_nd2/output_noMeasure/"
 
 result_name = "Analysis_test"
 
@@ -135,8 +135,6 @@ if (cell_column == 10 && orga_column == 10) {
   
 }
 
-head(merge_cell_organelle_result)
-
 # ------------------------------------------------------------------------------
 # save processed data
 write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
@@ -148,7 +146,6 @@ write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""),
            showNA=TRUE)
 
 # ------------------------------------------------------------------------------
-head(merged_summary)
 
 if (cell_column == 10 && orga_column == 10) {
   
@@ -236,25 +233,97 @@ do.call(grid.arrange, detection_plots)
   value_list_norm <- profile_collected$norm
   rownames(value_list) <- c()
   rownames(value_list_norm) <- c()
+  
+  head(value_list)
+  head(value_list_norm)
   # ------------------------------------------------------------------------------
-  # TODO needs renaming for result tables
-  # ------------------------------------------------------------------------------
+  if (cell_column == 10 && orga_column == 10) {
+  
+    value_list_result <- value_list %>%
+      rename(
+        cell_area = cellArea,
+        orga_numberOfDetections = numberDetections,
+        orga_intensity = orgaMeanIntensity,
+        orga_background = orgaMeanBackground,
+        measure_intensity = measureMeanIntensity,
+        measure_background = measureMeanBackground,
+        orga_intensity_backsub = orgaMeanIntensityBacksub,
+        measure_intensity_backsub = measureMeanIntensityBacksub,
+        orga_intensityMap_backsub = orgaIntensityBacksub_Bin,
+        orga_intensityMap = orgaIntensity_Bin,
+        measure_intensityMap_backsub = measureIntensityBacksub_Bin,
+        measure_intensityMap = measureIntensity_Bin
+      )
+    
+    } else {
+      
+      value_list_result <- value_list %>%
+        rename(
+          cell_area = cellArea,
+          orga_numberOfDetections = numberDetections,
+          orga_intensity = orgaMeanIntensity,
+          orga_background = orgaMeanBackground,
+          orga_intensity_backsub = orgaMeanIntensityBacksub,
+          orga_intensityMap_backsub = orgaIntensityBacksub_Bin,
+          orga_intensityMap = orgaIntensity_Bin
+        )
+      
+    }
+  # ----------------------------------------------------------------------------
   write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
-             value_list, 
+             value_list_result, 
              sheetName="Sheet1",  
              col.names=TRUE, 
              row.names=TRUE, 
              append=FALSE, 
              showNA=TRUE)
   
+  # ----------------------------------------------------------------------------
+  if (cell_column == 10 && orga_column == 10) {
+    
+    value_list_norm_result <- value_list_norm %>%
+      rename(
+        cell_area = cellArea,
+        orga_numberOfDetections = numberDetections,
+        orga_intensity = orgaMeanIntensity,
+        orga_background = orgaMeanBackground,
+        measure_intensity = measureMeanIntensity,
+        measure_background = measureMeanBackground,
+        orga_intensity_backsub = orgaMeanIntensityBacksub,
+        measure_intensity_backsub = measureMeanIntensityBacksub,
+        orga_intensityMapNorm_backsub = orgaIntensityBacksub_BinNorm,
+        orga_intensityMapNorm = orgaIntensity_BinNorm,
+        measure_intensityMapNorm_backsub = measureIntensityBacksub_BinNorm,
+        measure_intensityMapNorm = measureIntensity_BinNorm
+      )
+    
+  } else {
+    
+    value_list_norm_result <- value_list_norm %>%
+      rename(
+        cell_area = cellArea,
+        orga_numberOfDetections = numberDetections,
+        orga_intensity = orgaMeanIntensity,
+        orga_background = orgaMeanBackground,
+        orga_intensity_backsub = orgaMeanIntensityBacksub,
+        orga_intensityMapNorm_backsub = orgaIntensityBacksub_BinNorm,
+        orga_intensityMapNorm = orgaIntensity_BinNorm
+        
+      )
+    
+  }
+  
+  head(value_list_norm_result)
+  
   write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
-             value_list_norm, 
+             value_list_norm_result, 
              sheetName="Sheet1",  
              col.names=TRUE, 
              row.names=TRUE, 
              append=FALSE, 
              showNA=TRUE)
 
+  # ----------------------------------------------------------------------------
   organelle_profile <- plot_profiles(value_list, 
                                 value_list_norm, 
                                 "orga", 

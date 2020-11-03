@@ -91,8 +91,7 @@ merged_summary <- create_summary_table(merge_cell_organelle,
                                        cell_measure_filter)
 
 # ------------------------------------------------------------------------------
-# needs renaming for organelle result tables
-
+# renaming for organelle result tables
 if (cell_column == 10 && orga_column == 10) {
   
   merge_cell_organelle_result <- merge_cell_organelle %>%
@@ -256,7 +255,7 @@ do.call(grid.arrange, detection_plots)
              append=FALSE, 
              showNA=TRUE)
 
-  profile_plot <- plot_profiles(value_list, 
+  organelle_profile <- plot_profiles(value_list, 
                                 value_list_norm, 
                                 "orga", 
                                 plots_intensity, 
@@ -264,17 +263,17 @@ do.call(grid.arrange, detection_plots)
   
   if (cell_column == 10 && orga_column == 10) {
     
-    measure_profiles <- plot_profiles(value_list, 
+    measure_profile <- plot_profiles(value_list, 
                                       value_list_norm, 
                                       "measure", 
                                       plots_intensity, 
                                       plot_background_subtract)
     
-    do.call(grid.arrange, measure_profiles)
+    do.call(grid.arrange, measure_profile)
     
   }
   
-  do.call(grid.arrange, profile_plot)
+  do.call(grid.arrange, organelle_profile)
   
 # }
 

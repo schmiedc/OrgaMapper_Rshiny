@@ -285,11 +285,16 @@ server <- function(input, output, session) {
       result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
       
       # plot dir
-      plots_dir <- file.path(out_dir, "plots", fsep = .Platform$file.sep)
-      dir.create(plots_dir, showWarnings = FALSE)
+      plots_distance <- file.path(out_dir, "plot_distance_map", fsep = .Platform$file.sep)
+      dir.create(plots_distance, showWarnings = FALSE)
+      
+      # create directory for intensity maps
+      plots_intensity <- file.path(out_dir, "plot_intensity_map", fsep = .Platform$file.sep)
+      dir.create(plots_intensity, showWarnings = FALSE)
       
       # ==============================================================================
-      incProgress(1/progress, detail = paste("Processing distance data", 1))
+      incProgress(1/progress, detail = paste("Processing distance data. Step: ", 1))
+      
       name_distance = "organelleDistance.csv"
       name_cell_measure = "cellMeasurements.csv"
       
@@ -306,8 +311,6 @@ server <- function(input, output, session) {
       cell_column <- ncol(cell_measure)
       orga_column <- ncol(organelle_distance)
       
-      
-      
       cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                        feret_lower, 
                                                        feret_upper,
@@ -323,22 +326,111 @@ server <- function(input, output, session) {
       merged_summary <- create_summary_table(merge_cell_organelle,
                                              cell_measure_filter)
       
+      # ------------------------------------------------------------------------------
+      # save processed data
+      incProgress(1/progress, detail = paste("Saving distance results. Step: ", 2))
+      
+      # ------------------------------------------------------------------------------
+      # renaming for organelle result tables
+      if (cell_column == 10 && orga_column == 10) {
+        
+        merge_cell_organelle_result <- merge_cell_organelle %>%
+          rename(
+            cell_area = cellArea,
+            numberOfDetections = numberDetections,
+            orga_intensity = orgaMeanIntensity,
+            orga_background = orgaMeanBackground,
+            measure_intensity = measureMeanIntensity,
+            measure_background = measureMeanBackground,
+            orga_intensity_backsub = orgaMeanIntensityBacksub,
+            measure_intensity_backsub = measureMeanIntensityBacksub,
+            x_detection = xDetection,
+            y_detection = yDetection,
+            orga_distance_pixel = detectionDistanceRaw,
+            orga_distance_calibrated = detectionDistanceCalibrated,
+            orga_detection_peak = orgaDetectionPeak,
+            measure_detection_peak = measureDetectionPeak,
+            orga_detection_peak_backsub = orgaDetectionPeakBacksub,
+            measure_detection_peak_backsub = measureDetectionPeakBacksub,
+            orga_distance_normalized = detectionDistanceNormalized
+          )
+        
+      } else {
+        
+        merge_cell_organelle_result <- merge_cell_organelle %>%
+          rename(
+            cell_area = cellArea,
+            numberOfDetections = numberDetections,
+            orga_intensity = orgaMeanIntensity,
+            orga_background = orgaMeanBackground,
+            orga_intensity_backsub = orgaMeanIntensityBacksub,
+            x_detection = xDetection,
+            y_detection = yDetection,
+            orga_distance_pixel = detectionDistanceRaw,
+            orga_distance_calibrated = detectionDistanceCalibrated,
+            orga_detection_peak = orgaDetectionPeak,
+            orga_detection_peak_backsub = orgaDetectionPeakBacksub,
+            orga_distance_normalized = detectionDistanceNormalized
+          )
+        
+      }
+      
+      head(merge_cell_organelle_result)
       
       # ------------------------------------------------------------------------------
       # save processed data
-      incProgress(1/progress, detail = paste("Saving distance results", 2))
-      
       write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
-                 merge_cell_organelle, 
+                 merge_cell_organelle_result, 
                  sheetName="Sheet1",  
                  col.names=TRUE, 
                  row.names=TRUE, 
                  append=FALSE, 
                  showNA=TRUE)
       
+      # ------------------------------------------------------------------------------
+      head(merged_summary)
+      
+      if (cell_column == 10 && orga_column == 10) {
+        
+        merged_summary_result <- merged_summary %>%
+          rename(
+            cell_area = cellArea,
+            orga_numberOfDetections = numberDetections,
+            orga_intensity = orgaMeanIntensity,
+            orga_background = orgaMeanBackground,
+            measure_intensity = measureMeanIntensity,
+            measure_background = measureMeanBackground,
+            orga_intensity_backsub = orgaMeanIntensityBacksub,
+            measure_intensity_backsub = measureMeanIntensityBacksub,
+            orga_meanDistance_pixel = detectionDistanceRaw.mean,
+            orga_meanDistance_calibrated = detectionDistanceCalibrated.mean,
+            orga_intensityOnDetection = orgaDetectionPeak.mean,
+            measure_intensityOnDetection = measureDetectionPeak.mean,
+            orga_intensityOnDetection_backsub = orgaDetectionPeakBacksub.mean,
+            measure_intensityOnDetection_backsub = measureDetectionPeakBacksub.mean,
+            orga_meanDistance_normalized = detectionDistanceNormalized.mean
+          )
+        
+      } else {
+        
+        merged_summary_result <- merged_summary %>%
+          rename(
+            cell_area = cellArea,
+            orga_numberOfDetections = numberDetections,
+            orga_intensity = orgaMeanIntensity,
+            orga_background = orgaMeanBackground,
+            orga_intensity_backsub = orgaMeanIntensityBacksub,
+            orga_meanDistance_pixel = detectionDistanceRaw.mean,
+            orga_meanDistance_calibrated = detectionDistanceCalibrated.mean,
+            orga_intensityOnDetection = orgaDetectionPeak.mean,
+            orga_intensityOnDetection_backsub = orgaDetectionPeakBacksub.mean,
+            orga_meanDistance_normalized = detectionDistanceNormalized.mean
+          )
+        
+      }
       # merged_summary
       write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
-                 merged_summary, 
+                 merged_summary_result, 
                  sheetName="Sheet1",  
                  col.names=TRUE, 
                  row.names=TRUE, 
@@ -347,24 +439,26 @@ server <- function(input, output, session) {
       
       # ------------------------------------------------------------------------------
       # plot data
-      incProgress(1/progress, detail = paste("Plotting distance maps", 3))
+      incProgress(1/progress, detail = paste("Plotting distance maps. Step: ", 3))
       
       cell_plots <- plot_cell_measurements(cell_measure_filter,
-                                           plots_dir,
+                                           plots_distance,
                                            cell_column,
                                            orga_column,
                                            plot_background_subtract)
       
+      
+      
       detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                      merged_summary,
-                                                     plots_dir,
+                                                     plots_distance,
                                                      cell_column,
                                                      orga_column,
                                                      norm_distance_nucleus,
                                                      plot_background_subtract)
       
       # ------------------------------------------------------------------------------
-      incProgress(1/progress, detail = paste("Processing intensity data", 4))
+      incProgress(1/progress, detail = paste("Processing intensity data. Step: ", 4))
       
       output$cell_plots <- renderPlot({
         
@@ -386,7 +480,7 @@ server <- function(input, output, session) {
         
         print("Processing data for intensity maps")
         
-        name_value_measure = "intDistance.csv"
+        name_value_measure = "intensityDistance.csv"
         
         profile_collected <- collect_individual_profiles(directory,
                                                          name_value_measure,
@@ -397,15 +491,14 @@ server <- function(input, output, session) {
                                                          bin_width,
                                                          upper_limit_norm,
                                                          bin_width_norm)
-        print("Saving data of intensity maps")
+        
         value_list <- profile_collected$raw
         value_list_norm <- profile_collected$norm
-        
-        # delete row names
         rownames(value_list) <- c()
         rownames(value_list_norm) <- c()
-        
+
         # ------------------------------------------------------------------------------
+        print("Saving intensity map data")
         incProgress(1/progress, detail = paste("Saving intensity data", 5))
         
         write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
@@ -429,8 +522,8 @@ server <- function(input, output, session) {
         print("Plotting intensity maps")
         organelle_profile <- plot_profiles(value_list, 
                                       value_list_norm, 
-                                      "organelle", 
-                                      plots_dir, 
+                                      "orga", 
+                                      plots_intensity, 
                                       plot_background_subtract)
 
         output$intProfile_organelle <- renderPlot({
@@ -446,7 +539,7 @@ server <- function(input, output, session) {
           measure_profile <- plot_profiles(value_list, 
                                             value_list_norm, 
                                             "measure", 
-                                            plots_dir, 
+                                            plots_intensity, 
                                             plot_background_subtract)
           
           output$intProfile_measure <- renderPlot({

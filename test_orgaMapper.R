@@ -119,6 +119,8 @@ cell_plots <- plot_cell_measurements(cell_measure_filter,
                                      orga_column,
                                      plot_background_subtract)
 
+
+
 detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                merged_summary,
                                                plots_distance,
@@ -169,7 +171,7 @@ do.call(grid.arrange, detection_plots)
 
   profile_plot <- plot_profiles(value_list, 
                                 value_list_norm, 
-                                "organelle", 
+                                "orga", 
                                 plots_intensity, 
                                 plot_background_subtract)
   

@@ -23,12 +23,13 @@ plot_profiles <- function(value_collected,
   raw_norm = ""
   raw = ""
   
-  if (channel_string == "organelle") {
+  if (channel_string == "orga") {
     
     backsub_norm = "orgaIntensityBacksub_BinNorm"
     backsub = "orgaIntensityBacksub_Bin"
     raw_norm = "orgaIntensity_BinNorm"
     raw = "orgaIntensity_Bin"
+    channel_title_string = "Orga"
     
   } else if (channel_string == "measure") {
     
@@ -36,6 +37,7 @@ plot_profiles <- function(value_collected,
     backsub = "measureIntensityBacksub_Bin"
     raw_norm = "measureIntensity_BinNorm"
     raw = "measureIntensity_Bin"
+    channel_title_string = "Measure"
     
   }
 
@@ -74,11 +76,11 @@ plot_profiles <- function(value_collected,
     lineplot_theme() +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ylab("Fluorescent intensity (A.U.)") +
-    ggtitle(sprintf("Intensity profile %s channel", channel_string)) +
+    ggtitle(sprintf("Intensity map \n%s channel", channel_title_string)) +
     xlab("Distance from nucleus (µm)") 
   
   ggsave(plot = raw_profile,
-         file=paste0(plots, .Platform$file.sep, sprintf("profile_%s",channel_string), ".pdf"), 
+         file=paste0(plots, .Platform$file.sep, sprintf("%s_intensityMap",channel_string), ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
@@ -93,10 +95,10 @@ plot_profiles <- function(value_collected,
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ylab("Fluorescent intensity (A.U.)") +
     xlab("Normalized distance from nucleus") +
-    ggtitle(sprintf("Norm profile %s channel", channel_string))
+    ggtitle(sprintf("Intensity map distance normalized \n%s channel", channel_title_string))
   
   ggsave(plot = profile_norm,
-         file=paste0(plots, .Platform$file.sep, sprintf("NormProfile_%s",channel_string), ".pdf"), 
+         file=paste0(plots, .Platform$file.sep, sprintf("%s_intensityMap_normDist",channel_string), ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
@@ -129,10 +131,10 @@ plot_profiles <- function(value_collected,
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ylab("Normalized fluorescent intensity") +
     xlab("Normalized distance from Nucleus") +
-    ggtitle(sprintf("Peak norm profile %s channel", channel_string))
+    ggtitle(sprintf("Intensity map distance & peak normalized \n%s channel", channel_title_string))
   
   ggsave(plot = profile_peak,
-         file=paste0(plots, .Platform$file.sep, sprintf("PeakNormProfile_%s",channel_string), ".pdf"), 
+         file=paste0(plots, .Platform$file.sep, sprintf("%s_intensityMap_normDistPeak",channel_string), ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")

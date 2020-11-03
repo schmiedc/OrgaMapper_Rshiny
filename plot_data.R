@@ -120,20 +120,20 @@ plot_cell_measurements <- function(cell_data_table,
                    "numberDetections",
                    organelle_intensity_cell)
   
-  measure1_title <- list("Average Feret's diameter", 
-                         "Average cell area", 
-                         "Number of detections per cell", 
-                         "Average intensity in cell (detection channel)")
+  measure1_title <- list("Cell feret's diameter", 
+                         "Cell area", 
+                         "Cell number of detections", 
+                         "Cell avg. intensity \nOrganelle channel")
   
-  measure1_label <- list("ferets diameter (µm)", 
-                         "cell area (µm²)", 
-                         "average count", 
-                         "fluorescent intensity (A.U.)")
+  measure1_label <- list("Ferets diameter (µm)", 
+                         "Cell area (µm²)", 
+                         "Average count", 
+                         "Fluorescent intensity (A.U.)")
   
-  measure1_file <- list("feretPlot", 
-                        "cellArea", 
-                        "numDetections", 
-                        "intPerCellDetection")
+  measure1_file <- list("cell_ferets", 
+                        "cell_area", 
+                        "cell_numberOfDetections", 
+                        "cell_avgIntensityOrga")
 
   cell_measure_long <- cell_data_table %>% 
     pivot_longer(cols=ferets:orgaMeanIntensityBacksub,values_to = "measurement")
@@ -184,9 +184,9 @@ plot_cell_measurements <- function(cell_data_table,
     colnames(cell_measure_filter_new)[2] <- "measure"
     
     plot_cell_measure <- ggplot(cell_measure_filter_new, aes(x=identifier, y=measure)) +
-      ggtitle("Average intensity in cell (measure channel)") + 
+      ggtitle("Cell avg. intensity \nMeasure channel") + 
       xlab("Treatment") +
-      ylab("fluorescent intensity (A.U.)") +
+      ylab("Fluorescent intensity (A.U.)") +
       geom_boxplot(outlier.size = 0, outlier.shape = 1) + 
       stat_boxplot(geom = 'errorbar', width = 0.2) +
       geom_jitter(width = 0.1) +
@@ -195,7 +195,7 @@ plot_cell_measurements <- function(cell_data_table,
     plot_list_cell[[length(plot_list_cell)  + 1]] <- plot_cell_measure
     
     ggsave(plot = plot_cell_measure,
-           file=paste0(plots, .Platform$file.sep, "intPerCellMeasure", ".pdf"), 
+           file=paste0(plots, .Platform$file.sep, "cell_avgIntensityMeasure", ".pdf"), 
            width = 297, 
            height = 210, 
            units = "mm")
@@ -259,15 +259,15 @@ plot_detection_measurements <- function(full_data_table,
                                              group = name, 
                                              color = name)) + 
     geom_line() +
-    xlab("Normalized distance from Nucleus") +
-    ylab("Lysosome density (peak norm)") +
-    ggtitle("Raw density plots") +
+    xlab("Normalized distance from nucleus") +
+    ylab("Lysosome density") +
+    ggtitle("Orga distance distribution") +
     scale_x_continuous(expand = c(0, 0)) + # force start at 0
     scale_y_continuous(expand = c(0, 0)) + # force start at 0
     lineplot_theme()
   
   ggsave(plot = plot_density_raw,
-         file=paste0(plots, .Platform$file.sep, "raw_densityPlot", ".pdf"), 
+         file=paste0(plots, .Platform$file.sep, "orga_distance_distribution", ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
@@ -283,13 +283,13 @@ plot_detection_measurements <- function(full_data_table,
     geom_line() +
     xlab("Normalized distance from Nucleus") +
     ylab("Lysosome density (peak norm)") +
-    ggtitle("Peak normalized density plots") +
+    ggtitle("Orga distance distribution \nPeak normalized") +
     scale_x_continuous(expand = c(0, 0)) + # force start at 0
     scale_y_continuous(expand = c(0, 0)) + # force start at 0
     lineplot_theme()
   
   ggsave(plot = plot_density,
-         file=paste0(plots, .Platform$file.sep, "densityPlot", ".pdf"), 
+         file=paste0(plots, .Platform$file.sep, "orga_distance_distribution_peakNormalized", ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
@@ -314,17 +314,21 @@ plot_detection_measurements <- function(full_data_table,
                    "detectionDistanceNormalized.mean",
                    organelle_intensity_peak)
   
-  measure2_title <- list("Average distance from nucleus", 
-                         "Average normalized distance from nucleus",
-                         "Average peak detection intensity  (detection channel)")
+  measure2_title <- list("Avg. distance from nucleus", 
+                         "Avg. normalized distance from nucleus",
+                         "Avg. detection peak \nOrganelle channel")
   
-  measure2_label <- list("distance (µm)", 
-                         "normalized distance",
-                         "fluorescent intensity (A.U.)")
+  measure2_sub_title <- list(" ", 
+                         " ",
+                         "Detection channel")
   
-  measure2_file <- list("distance", 
-                        "distanceNorm",
-                        "intPerDetectionDetectionChannel")
+  measure2_label <- list("Distance (µm)", 
+                         "Normalized distance",
+                         "Fluorescent intensity (A.U.)")
+  
+  measure2_file <- list("orga_avgDistance", 
+                        "orga_avgDistance_normalized",
+                        "orga_avgDetectionPeak")
   
   summary_long <- summary_table %>% 
     pivot_longer(cols=detectionDistanceRaw.mean:detectionDistanceNormalized.mean, 
@@ -374,9 +378,9 @@ plot_detection_measurements <- function(full_data_table,
     colnames(summary_table_new)[2] <- "measure"
     
     plot_peak_measure <- ggplot(summary_table_new, aes(x=identifier, y=measure)) +
-      ggtitle("Average peak detection intensity (measure channel)") + 
+      ggtitle("Avg. detection peak \nMeasure Channel") + 
       xlab("Treatment") +
-      ylab("fluorescent intensity (A.U.)") +
+      ylab("Fluorescent intensity (A.U.)") +
       geom_boxplot(outlier.size = 0, outlier.shape = 1) + 
       stat_boxplot(geom = 'errorbar', width = 0.2) +
       geom_jitter(width = 0.1) +
@@ -387,7 +391,7 @@ plot_detection_measurements <- function(full_data_table,
     ggsave(plot = plot_peak_measure,
            file=paste0(plots, 
                        .Platform$file.sep, 
-                       "intPerDetectionMeasureChannel", 
+                       "orga_avgMeasurePeak", 
                        ".pdf"), 
            width = 297, 
            height = 210, 

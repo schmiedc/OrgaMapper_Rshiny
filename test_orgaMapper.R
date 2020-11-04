@@ -14,7 +14,7 @@ source("plot_profiles.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/Test/test_nd2/output_noMeasure/"
+directory = "/home/schmiedc/Desktop/OrgaMapper_Data/size_MTM1KOvsWT/output_test/"
 
 result_name = "Analysis_test"
 
@@ -28,7 +28,7 @@ norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = FALSE
+single_series = TRUE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
@@ -90,6 +90,7 @@ merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
 merged_summary <- create_summary_table(merge_cell_organelle,
                                        cell_measure_filter)
 
+head(merged_summary)
 # ------------------------------------------------------------------------------
 # renaming for organelle result tables
 if (cell_column == 10 && orga_column == 10) {

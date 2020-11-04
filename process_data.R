@@ -12,11 +12,11 @@ read_collected_files <- function(inputdir,
   # TODO needs to default to sensible value if nothing found
   if (series_switch) {
     
-    file$Series <- str_extract(file$identifier, series_regex)
+    file$series <- str_extract(file$identifier, series_regex)
     
-    file$Name <- str_remove(file$identifier, series_regex)
+    file$name <- str_remove(file$identifier, series_regex)
 
-    file$Name <- str_remove(file$identifier, "(_|-| )($)")
+    file$name <- str_remove(file$identifier, "(_|-| )($)")
 
   }
   

@@ -14,9 +14,9 @@ read_collected_files <- function(inputdir,
     
     file$series <- str_extract(file$identifier, series_regex)
     
-    file$name <- str_remove(file$identifier, series_regex)
+    file$identifier <- str_remove(file$identifier, series_regex)
 
-    file$name <- str_remove(file$identifier, "(_|-| )($)")
+    file$identifier <- str_remove(file$identifier, "(_|-| )($)")
 
   }
   

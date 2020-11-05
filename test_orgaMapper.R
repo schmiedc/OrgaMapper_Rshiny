@@ -75,6 +75,7 @@ cell_measure <- read_collected_files(directory,
 cell_column <- ncol(cell_measure)
 orga_column <- ncol(organelle_distance)
 
+
 cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                  feret_lower, 
                                                  feret_upper,
@@ -90,7 +91,6 @@ merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
 merged_summary <- create_summary_table(merge_cell_organelle,
                                        cell_measure_filter)
 
-head(merged_summary)
 # ------------------------------------------------------------------------------
 # renaming for organelle result tables
 if (cell_column == 10 && orga_column == 10) {

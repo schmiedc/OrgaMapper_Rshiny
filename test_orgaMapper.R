@@ -11,10 +11,11 @@ source("process_data.R")
 source("plot_data.R")
 source("process_profiles.R")
 source("plot_profiles.R")
+source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/OrgaMapper_Data/size_MTM1KOvsWT/output_test/"
+directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
 
 result_name = "Analysis_test"
 
@@ -24,11 +25,12 @@ feret_lower = 0
 feret_upper = 600
 
 # determine range for plots
+cal_distance_nucleus = 75
 norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = TRUE
+single_series = FALSE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
@@ -210,6 +212,7 @@ detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                plots_distance,
                                                cell_column,
                                                orga_column,
+                                               cal_distance_nucleus,
                                                norm_distance_nucleus,
                                                plot_background_subtract)
 
@@ -278,6 +281,13 @@ do.call(grid.arrange, detection_plots)
              row.names=TRUE, 
              append=FALSE, 
              showNA=TRUE)
+  
+  # ----------------------------------------------------------------------------
+  # compute & plot intensity ratio
+  intensity_ratio_results <- compute_intensity_ration(value_list_result, 10, bin_width, 0)
+
+  plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
+  
   
   # ----------------------------------------------------------------------------
   if (cell_column == 10 && orga_column == 10) {

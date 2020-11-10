@@ -66,7 +66,7 @@ ui <- fluidPage(
                     
                     column(width = 5, offset = 0,
                            
-                      h3("Map distance:"),
+                      h3("General:"),
                       
                       radioButtons("series_type", 
                                    "Data set type",
@@ -95,6 +95,26 @@ ui <- fluidPage(
                       checkboxInput("filter_ferets", 
                                     "Filter by ferets diameter?", 
                                     value = TRUE),
+
+                      checkboxInput("plot_background_subtract", 
+                                    "Subtract background in plots?", 
+                                    value = TRUE),
+                      
+                      checkboxInput("analyze_signal_profiles", 
+                                    "Map intensity?", 
+                                    value = FALSE),
+                      
+                    ),
+                    
+                    column(width = 5, offset = 1,
+                           
+                      h3("Map distance:"),
+                      
+                      sliderInput("limit_cal_distance", 
+                                  "Range of raw distance (µm):",
+                                  min = 0, 
+                                  max = 1000, 
+                                  value = 70),
                       
                       sliderInput("limit_norm_distance", 
                                   "Range of normalized distance:",
@@ -102,19 +122,8 @@ ui <- fluidPage(
                                   max = 1, 
                                   value = 0.7),
                       
-                      checkboxInput("plot_background_subtract", 
-                                    "Subtract background in plots?", 
-                                    value = TRUE),
-                    ),
-                    
-                    column(width = 5, offset = 2,
-                           
                       h3("Map intensity:"),
-                      
-                      checkboxInput("analyze_signal_profiles", 
-                                    "Map intensity?", 
-                                    value = FALSE),
-                 
+
                       numericInput("bin_width", 
                                    "Bin width raw distance (µm):", 
                                    value = 2),  
@@ -123,7 +132,7 @@ ui <- fluidPage(
                                   "Range of raw distance (µm):",
                                   min = 0, 
                                   max = 1000, 
-                                  value = 75),
+                                  value = 70),
                       
                       # plot ranges
                       numericInput("bin_width_norm", 
@@ -137,6 +146,7 @@ ui <- fluidPage(
                                   value = 0.7)
                       
                     )
+      
                   ),
                   
                   fluidRow(
@@ -240,6 +250,8 @@ server <- function(input, output, session) {
       feret_upper <- input$feret_limits[2]
       
       # determine range for plots
+      
+      cal_distance_nucleus <- input$limit_cal_distance
       # norm_distance_nucleus = 0.7
       norm_distance_nucleus <- input$limit_norm_distance
       
@@ -454,6 +466,7 @@ server <- function(input, output, session) {
                                                      plots_distance,
                                                      cell_column,
                                                      orga_column,
+                                                     cal_distance_nucleus,
                                                      norm_distance_nucleus,
                                                      plot_background_subtract)
       

@@ -211,6 +211,7 @@ plot_detection_measurements <- function(full_data_table,
                                         plots,
                                         column_cell_table,
                                         column_orga_table,
+                                        cal_distance_nucleus,
                                         norm_distance_nucleus,
                                         background_subtract) {
   
@@ -219,6 +220,9 @@ plot_detection_measurements <- function(full_data_table,
   
   name_count <- as.data.frame(table(full_data_table$identifier))
   detect_list <- list()
+  detect_list_cal <- list()
+  
+  head(full_data_table)
 
   # goes through each experiment and calculates lysosome density
   # then peak normalizes the lysosome density
@@ -242,7 +246,51 @@ plot_detection_measurements <- function(full_data_table,
     data_frame$peak_norm <- sapply(data_frame$y, function(x){x /  max})
     detect_list[[name_id]] <- data_frame
     
+    # calibrated density distribution
+    cal_density_per_name <- density(data_per_name$detectionDistanceCalibrated, 
+                                    bw = "nrd0", 
+                                    n = 512, 
+                                    from = 0, 
+                                    to = cal_distance_nucleus)
+    
+    data_frame_cal <- data.frame(cal_density_per_name$x)
+    data_frame_cal$y <- cal_density_per_name$y
+    colnames(data_frame_cal)[1] <-  "x"
+    
+    detect_list_cal[[name_id]] <- data_frame_cal
+    
   }
+  
+  
+  # binds collection of normalized density plots and binds them into one dataframe
+  cal_list <- do.call("rbind", detect_list_cal)
+  cal_list1 <- tibble::rownames_to_column(cal_list, "nameindex")
+  cal_list1_indices <- str_split_fixed(cal_list1$nameindex, "\\.", 2)
+  cal_list2 <- cbind(cal_list1_indices, cal_list1)
+  colnames(cal_list2)[1] <- "name"
+  colnames(cal_list2)[2] <- "index"
+  
+  # Plot Lysosome density vs normalized distance from Nucleus
+  # density plots with peak normalized data
+  plot_density_cal <- ggplot(cal_list2, aes(x = x, 
+                                            y = y, 
+                                            group = name, 
+                                            color = name)) + 
+    geom_line() +
+    xlab("Cal distance from Nucleus (µm)") +
+    ylab("Lysosome density") +
+    ggtitle("Orga distance distribution") +
+    scale_x_continuous(expand = c(0, 0)) + # force start at 0
+    scale_y_continuous(expand = c(0, 0)) + # force start at 0
+    lineplot_theme()
+  
+  ggsave(plot = plot_density_cal,
+         file=paste0(plots, .Platform$file.sep, "orga_distance_distribution_cal", ".pdf"), 
+         width = 297, 
+         height = 210, 
+         units = "mm")
+  
+  plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_cal
   
   # binds collection of normalized density plots and binds them into one dataframe
   norm_list <- do.call("rbind", detect_list)
@@ -272,7 +320,7 @@ plot_detection_measurements <- function(full_data_table,
          height = 210, 
          units = "mm")
   
-  plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_raw
+  # plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_raw
   
   # Plot Lysosome density vs normalized distance from Nucleus
   # density plots with peak normalized data
@@ -295,6 +343,8 @@ plot_detection_measurements <- function(full_data_table,
          units = "mm")
   
   plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density
+  
+  
   
   # ------------------------------------------------------------------------------
   # plot distance and detection intensity

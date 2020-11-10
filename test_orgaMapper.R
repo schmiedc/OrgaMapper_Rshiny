@@ -11,7 +11,7 @@ source("process_data.R")
 source("plot_data.R")
 source("process_profiles.R")
 source("plot_profiles.R")
-source("plot_intensity_ratio.R")
+#source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
@@ -287,7 +287,6 @@ do.call(grid.arrange, detection_plots)
   intensity_ratio_results <- compute_intensity_ration(value_list_result, 10, bin_width, 0)
 
   plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
-  
   
   # ----------------------------------------------------------------------------
   if (cell_column == 10 && orga_column == 10) {

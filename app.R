@@ -15,7 +15,7 @@ source("process_data.R")
 source("plot_data.R")
 source("process_profiles.R")
 source("plot_profiles.R")
-
+source("plot_intensity_ratio.R")
 # ============================================================================
 #
 #  DESCRIPTION: Data analysis for OrgaMapper
@@ -229,7 +229,7 @@ server <- function(input, output, session) {
     tryCatch({
       
       withProgress(message = 'Progress:', value = 0, {
-      progress = 7
+      progress = 8
       
       # path to folder where the directories for the measurements are
       # directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
@@ -556,6 +556,14 @@ server <- function(input, output, session) {
                    showNA=TRUE)
         
         # ----------------------------------------------------------------------------
+        # compute & plot intensity ratio
+        print("Create intensity ratio plot")
+        incProgress(1/progress, detail = paste("Saving intensity data", 6))
+        intensity_ratio_results <- compute_intensity_ration(value_list_result, 10, bin_width, 0)
+        
+        plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
+        
+        # ----------------------------------------------------------------------------
         if (cell_column == 10 && orga_column == 10) {
           
           value_list_norm_result <- value_list_norm %>%
@@ -600,7 +608,7 @@ server <- function(input, output, session) {
         
         # ----------------------------------------------------------------------------
         
-        incProgress(1/progress, detail = paste("Plotting intensity maps", 6))
+        incProgress(1/progress, detail = paste("Plotting intensity maps", 7))
         
         print("Plotting intensity maps")
         organelle_profile <- plot_profiles(value_list, 
@@ -636,7 +644,7 @@ server <- function(input, output, session) {
   
       } 
       
-      incProgress(1/progress, detail = paste("Done", 7))
+      incProgress(1/progress, detail = paste("Done", 8))
       }) # end of progess
       
     }, error=function(e) {

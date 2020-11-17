@@ -441,130 +441,173 @@ write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""),
 
 # ------------------------------------------------------------------------------
 # create binned data 
-head(intensity_map_result)
-
-identifier_count <- as.data.frame(table(intensity_map_result$identifier))
-
-subset_list <- list()
-
-for (name_id in identifier_count$Var1){
+plot_intensity_map <- function(dataframe_calib, 
+                               dataframe_norm, 
+                               channel_string, 
+                               bin_width_calib, 
+                               upper_limit_calib, 
+                               bin_width_normalized,
+                               upper_limit_normalized) {
   
-  subset_table <- subset(intensity_map_result, identifier == name_id)
-  
-  subset_bin <- bin_distance_values_new(subset_table$intensityDistanceCalibrated, 
-                                             subset_table$orga_mean, 
-                                             "binned_calibrated", 
-                                             bin_width, 
-                                             upper_limit)
-  
-  
-  subset_list[[name_id]] <- subset_bin
-  
-}
-
-binned_list <- do.call("rbind", subset_list)
-binned_list1 <- tibble::rownames_to_column(binned_list, "nameindex")
-binned_list1_indices <- str_split_fixed(binned_list1$nameindex, "\\.", 2)
-binned_list2 <- cbind(binned_list1_indices, binned_list1)
-colnames(binned_list2)[1] <- "identifier"
-colnames(binned_list2)[2] <- "index"
-binned_list2$nameindex <- NULL
-head(binned_list2)
-
-
-# plots intensity profiles
-ggplot(data=binned_list2,  aes(x=row, y=binned_calibrated, color=identifier)) +
-  geom_line(aes(color=identifier), na.rm=TRUE) +
-  geom_point(aes(color=identifier), na.rm=TRUE) +
-  ylab("Fluorescent intensity (A.U.)") +
-  xlab("Normalized distance from nucleus") +
-  ggtitle(sprintf("Intensity map distance normalized \nOrga channel"))
-
-# ------------------------------------------------------------------------------
-# create binned data 
-identifier_count <- as.data.frame(table(intensity_map_result_norm$identifier))
-
-subset_list_norm <- list()
-
-head(intensity_map_result_norm)
-
-for (name_id in identifier_count$Var1){
-
-  subset_table <- subset(intensity_map_result_norm, identifier == name_id)
-  
-  subset_bin_norm <- bin_distance_values_new(subset_table$intensityDistanceNormalized, 
-                                        subset_table$orga_mean, 
-                                        "binned_normalized", 
-                                        bin_width_norm, 
-                                        upper_limit_norm)
-  
-  
-  subset_list_norm[[name_id]] <- subset_bin_norm
-
-}
-
-binned_list_norm <- do.call("rbind", subset_list_norm)
-binned_list_norm1 <- tibble::rownames_to_column(binned_list_norm, "nameindex")
-binned_list_norm1_indices <- str_split_fixed(binned_list_norm1$nameindex, "\\.", 2)
-binned_list_norm2 <- cbind(binned_list_norm1_indices, binned_list_norm1)
-colnames(binned_list_norm2)[1] <- "identifier"
-colnames(binned_list_norm2)[2] <- "index"
-binned_list_norm2$nameindex <- NULL
-head(binned_list_norm2)
-
-# ------------------------------------------------------------------------------
-# plot of binned data
-# plots distance normalized intensity profiles
-ggplot(data=binned_merge,  aes(x=row, y=binned_normalized, color=identifier)) +
-  geom_line(aes(color=identifier), na.rm=TRUE) +
-  geom_point(aes(color=identifier), na.rm=TRUE) +
-  ylab("Fluorescent intensity (A.U.)") +
-  xlab("Normalized distance from nucleus") +
-  ggtitle(sprintf("Intensity map distance normalized \nOrga channel"))
-
-
-# peak normalisation
-name_count_value <- as.data.frame(table(binned_list_norm2$identifier))
-col_intensity_map <- ncol(binned_list_norm2)
-value_list_peak <- list()
-
-for (name in name_count_value$Var1){
-  
-  data_per_name <- subset(binned_list_norm2, identifier == name)
-  
-  max_value_profiles = max(data_per_name$binned_normalized, na.rm = TRUE)
-  data_per_name$orga_peak_norm <- sapply(data_per_name$binned_normalized, function(x){x /  max_value_profiles})
-  
-  if ( col_intensity_map == 6) {
+  if (channel_string == "orga") {
     
-    max_value_profiles = max(data_per_name$measure_peak_norm, na.rm = TRUE)
-    data_per_name$measure_peak_norm <- sapply(data_per_name$measure_peak_norm, function(x){x /  max_value_profiles})
+    bin_param_calib = "orga_mean"
+    bin_param_norm = "orga_mean"
+    
+  } else if (channel_string == "measure") {
+    
+    bin_param_calib = "measure_mean"
+    bin_param_norm = "measure_mean"
     
   }
   
-  value_list_peak[[name]] <- data_per_name
+  identifier_count <- as.data.frame(table(dataframe_calib$identifier))
+  
+  subset_list <- list()
+  
+  for (name_id in identifier_count$Var1){
+    
+    subset_table <- subset(dataframe_calib, identifier == name_id)
+    
+    subset_bin <- bin_distance_values_new(subset_table$intensityDistanceCalibrated, 
+                                          subset_table[[bin_param_calib]],
+                                          "binned_calibrated", 
+                                          bin_width_calib, 
+                                          upper_limit_calib)
+    
+    
+    subset_list[[name_id]] <- subset_bin
+    
+  }
+  
+  binned_list <- do.call("rbind", subset_list)
+  binned_list1 <- tibble::rownames_to_column(binned_list, "nameindex")
+  binned_list1_indices <- str_split_fixed(binned_list1$nameindex, "\\.", 2)
+  binned_list2 <- cbind(binned_list1_indices, binned_list1)
+  colnames(binned_list2)[1] <- "identifier"
+  colnames(binned_list2)[2] <- "index"
+  binned_list2$nameindex <- NULL
+  head(binned_list2)
+  
+  plotlist <- list()
+  
+  # plots intensity profiles
+  map_calib <- ggplot(data=binned_list2,  aes(x=row, y=binned_calibrated, color=identifier)) +
+    geom_line(aes(color=identifier), na.rm=TRUE) +
+    geom_point(aes(color=identifier), na.rm=TRUE) +
+    ylab("Fluorescent intensity (A.U.)") +
+    xlab("Normalized distance from nucleus") +
+    ggtitle(sprintf("Intensity map distance normalized \n%s channel", channel_string))
+  
+  plotlist[[length(plotlist) + 1 ]] <- map_calib
+  
+  # ------------------------------------------------------------------------------
+  # create binned data 
+  identifier_count <- as.data.frame(table(dataframe_norm$identifier))
+  
+  subset_list_norm <- list()
+
+  for (name_id in identifier_count$Var1){
+    
+    subset_table <- subset(dataframe_norm, identifier == name_id)
+    
+    subset_bin_norm <- bin_distance_values_new(subset_table$intensityDistanceNormalized, 
+                                               subset_table[[bin_param_norm]], 
+                                               "binned_normalized", 
+                                               bin_width_normalized, 
+                                               upper_limit_normalized)
+    
+    subset_list_norm[[name_id]] <- subset_bin_norm
+    
+  }
+  
+  binned_list_norm <- do.call("rbind", subset_list_norm)
+  binned_list_norm1 <- tibble::rownames_to_column(binned_list_norm, "nameindex")
+  binned_list_norm1_indices <- str_split_fixed(binned_list_norm1$nameindex, "\\.", 2)
+  binned_list_norm2 <- cbind(binned_list_norm1_indices, binned_list_norm1)
+  colnames(binned_list_norm2)[1] <- "identifier"
+  colnames(binned_list_norm2)[2] <- "index"
+  binned_list_norm2$nameindex <- NULL
+  head(binned_list_norm2)
+  
+  # ------------------------------------------------------------------------------
+  # plot of binned data
+  # plots distance normalized intensity profiles
+  map_norm <- ggplot(data=binned_merge,  aes(x=row, y=binned_normalized, color=identifier)) +
+    geom_line(aes(color=identifier), na.rm=TRUE) +
+    geom_point(aes(color=identifier), na.rm=TRUE) +
+    ylab("Fluorescent intensity (A.U.)") +
+    xlab("Normalized distance from nucleus") +
+    ggtitle(sprintf("Intensity map distance normalized \n%s channel", channel_string))
+  
+  plotlist[[length(plotlist) + 1 ]] <- map_norm
+  
+  # peak normalisation
+  name_count_value <- as.data.frame(table(binned_list_norm2$identifier))
+  col_intensity_map <- ncol(binned_list_norm2)
+  value_list_peak <- list()
+  
+  for (name in name_count_value$Var1){
+    
+    data_per_name <- subset(binned_list_norm2, identifier == name)
+    
+    max_value_profiles = max(data_per_name$binned_normalized, na.rm = TRUE)
+    data_per_name$orga_peak_norm <- sapply(data_per_name$binned_normalized, function(x){x /  max_value_profiles})
+    
+    if ( col_intensity_map == 6) {
+      
+      max_value_profiles = max(data_per_name$measure_peak_norm, na.rm = TRUE)
+      data_per_name$measure_peak_norm <- sapply(data_per_name$measure_peak_norm, function(x){x /  max_value_profiles})
+      
+    }
+    
+    value_list_peak[[name]] <- data_per_name
+    
+  }
+  
+  # binds collection of normalized value plots and binds them into one dataframe
+  norm_list_value <- do.call("rbind", value_list_peak)
+  head(norm_list_value)
+  
+  # plots peak normalized and distance normalized intensity profiles
+  map_peak <- ggplot(data=norm_list_value,  aes(x=row, y=orga_peak_norm, color=identifier)) +
+    geom_line(aes(color=identifier), na.rm=TRUE) +
+    geom_point(aes(color=identifier), na.rm=TRUE) +
+    ylab("Fluorescent intensity (A.U.)") +
+    xlab("Normalized distance from nucleus") +
+    ggtitle(sprintf("Intensity map distance normalized \n%s channel", channel_string))
+  
+  plotlist[[length(plotlist) + 1 ]] <- map_peak
+  
+  return(plotlist)
   
 }
 
-# binds collection of normalized value plots and binds them into one dataframe
-norm_list_value <- do.call("rbind", value_list_peak)
-head(norm_list_value)
+head(intensity_map_result)
+head(intensity_map_result_norm)
 
-# plots peak normalized and distance normalized intensity profiles
-ggplot(data=norm_list_value,  aes(x=row, y=orga_peak_norm, color=identifier)) +
-  geom_line(aes(color=identifier), na.rm=TRUE) +
-  geom_point(aes(color=identifier), na.rm=TRUE) +
-  ylab("Fluorescent intensity (A.U.)") +
-  xlab("Normalized distance from nucleus") +
-  ggtitle(sprintf("Intensity map distance normalized \nOrga channel"))
-
-
-
-
+intensity_map_result$orga_mean
+intensity_map_result[["orga_mean"]]
+plots <- plot_intensity_map(intensity_map_result, 
+                   intensity_map_result_norm, 
+                   "orga", 
+                   bin_width, 
+                   upper_limit,
+                   bin_width_norm,
+                   upper_limit_norm
+)
 
 
+plots <- plot_intensity_map(intensity_map_result, 
+                            intensity_map_result_norm, 
+                            "measure", 
+                            bin_width, 
+                            upper_limit,
+                            bin_width_norm,
+                            upper_limit_norm
+)
 
-
+plots[1]
 
 
 

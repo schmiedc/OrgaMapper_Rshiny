@@ -7,6 +7,7 @@ if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
 
 library("openxlsx")
 library(gridExtra)
+library(lazyeval)
 source("process_data.R")
 source("plot_data.R")
 source("process_profiles.R")
@@ -340,21 +341,94 @@ plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
 
 # ------------------------------------------------------------------------------
 # create different grouped means
-value_list_treat <- individual_intensity_maps %>% 
-  group_by(identifier,intensityDistanceCalibrated) %>% 
-  summarise(mean = mean(orgaIntensityBacksub))
+grouped_intensity_map <- function(individual_maps) {
+  
+  intensity_maps_col = ncol(individual_maps)
+  
+  if (intensity_maps_col == 18) {
+    
+    if (plot_background_subtract) {
+    
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
+      
+    } else {
+      
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
+    }
+    
+  } else {
+    
+    if (plot_background_subtract) {
+    
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub))
+      
+    } else {
+      
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity))
+      
+    }
+    
+  }
+  
+  # peak normalisation
+  name_count_value <- as.data.frame(table(value_list_treat_norm$identifier))
+  col_intensity_map <- ncol(value_list_treat_norm)
+  value_list_peak <- list()
+  
+  for (name in name_count_value$Var1){
+    
+    data_per_name <- subset(value_list_treat_norm, identifier == name)
+  
+    max_value_profiles = max(data_per_name$orga_mean, na.rm = TRUE)
+    data_per_name$orga_peak_norm <- sapply(data_per_name$orga_mean, function(x){x /  max_value_profiles})
+    
+    if ( col_intensity_map == 4) {
+    
+      max_value_profiles = max(data_per_name$measure_mean, na.rm = TRUE)
+      data_per_name$measure_peak_norm <- sapply(data_per_name$measure_mean, function(x){x /  max_value_profiles})
+      
+    }
+    
+    value_list_peak[[name]] <- data_per_name
+    
+  }
+  
+  # binds collection of normalized value plots and binds them into one dataframe
+  norm_list_value <- do.call("rbind", value_list_peak)
+  
+  return (list("raw" = value_list_treat, "norm" = norm_list_value ))
+  
+}
 
-value_list_treat_norm <- individual_intensity_maps %>% 
-  group_by(identifier, intensityDistanceNormalized) %>% 
-  summarise(mean = mean(orgaIntensityBacksub))
 
+value_lists <- grouped_intensity_map(individual_intensity_maps)
 
-
-
-
-
-
-
+head(value_lists$raw)
+head(value_lists$norm)
 # ------------------------------------------------------------------------------
 # create binned data 
 identifier_count <- as.data.frame(table(value_list_treat_norm$identifier))

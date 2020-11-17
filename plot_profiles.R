@@ -50,7 +50,7 @@ lineplot_theme <- function() {
 # ------------------------------------------------------------------------------
 # create binned data 
 plot_intensity_map <- function(dataframe_calib, 
-                               dataframe_norm, 
+                               data_norm, 
                                channel_string, 
                                bin_width_calib, 
                                upper_limit_calib, 
@@ -96,7 +96,6 @@ plot_intensity_map <- function(dataframe_calib,
   colnames(binned_list2)[1] <- "identifier"
   colnames(binned_list2)[2] <- "index"
   binned_list2$nameindex <- NULL
-  head(binned_list2)
   
   plotlist <- list()
   
@@ -121,13 +120,12 @@ plot_intensity_map <- function(dataframe_calib,
   
   # ------------------------------------------------------------------------------
   # create binned data 
-  identifier_count <- as.data.frame(table(dataframe_norm$identifier))
-  
+  identifier_count <- as.data.frame(table(data_norm$identifier))
   subset_list_norm <- list()
   
   for (name_id in identifier_count$Var1){
     
-    subset_table <- subset(dataframe_norm, identifier == name_id)
+    subset_table <- subset(data_norm, identifier == name_id)
     
     subset_bin_norm <- bin_distance_values_new(subset_table$intensityDistanceNormalized, 
                                                subset_table[[bin_param_norm]], 

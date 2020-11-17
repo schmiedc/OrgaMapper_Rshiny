@@ -160,6 +160,6 @@ grouped_intensity_map <- function(individual_maps) {
     
   }
   
-  return (list("raw" = value_list_treat, "norm" = norm_list_value ))
+  return (list("raw" = value_list_treat, "norm" = value_list_treat_norm ))
   
 }

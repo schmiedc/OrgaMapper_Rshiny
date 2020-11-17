@@ -56,17 +56,16 @@ compute_intensity_ration <- function(dataframe_value, perimeter, bin_width, peri
   perimeter_periphery = ( perimeter + perimeter_offset ) / bin_width
   perimeter_bin = perimeter / bin_width
 
-  
   value_perinuclear <- dataframe_value %>% 
-    filter(row <= perimeter_bin) %>% 
+    filter(intensityDistanceCalibrated <= perimeter_bin) %>% 
     group_by(identifier, series, cell) %>%  
-    summarise(mean_perinuclear = mean(orga_intensityMap_backsub), na.rm =TRUE)
+    summarise(mean_perinuclear = mean(orgaIntensityBacksub), na.rm =TRUE)
   
   value_peripheral <- dataframe_value %>% 
     drop_na() %>% 
-    filter(row > perimeter_periphery) %>% 
+    filter(intensityDistanceCalibrated > perimeter_periphery) %>% 
     group_by(identifier, series, cell) %>% 
-    summarise(mean_peripheral = mean(orga_intensityMap_backsub))
+    summarise(mean_peripheral = mean(orgaIntensityBacksub))
   
   value_merge <- inner_join(value_perinuclear, value_peripheral, by = c("identifier", "series", "cell"))
   value_merge$intensity_ratio <- value_merge$mean_perinuclear / value_merge$mean_peripheral
@@ -81,9 +80,9 @@ plot_intensity_ration <- function(dataFrame, name, directory) {
     ggtitle(sprintf("Intensity Ratio \n%s channel", name)) + 
     xlab("Treatment") +
     ylab("I perinculear / I peripheral") +
-    geom_boxplot(outlier.size = 0, outlier.shape = 1, na.rm=TRUE) + 
+    geom_boxplot(outlier.size = 0, outlier.shape = NA, na.rm=TRUE) + 
     stat_boxplot(geom = 'errorbar', width = 0.2, na.rm=TRUE) +
-    scale_y_continuous(limits = quantile(dataFrame$intensity_ratio, c(0, 0.9))) +
+    scale_y_continuous(limits = quantile(dataFrame$intensity_ratio, c(0.1, 0.9))) +
     geom_jitter(width = 0.1, na.rm=TRUE) + 
     boxplot_theme()
   

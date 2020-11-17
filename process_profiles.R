@@ -31,7 +31,6 @@ process_profile_data <- function(value_data,
                              value_data, 
                              by = c("identifier", "series", "cell"))
   
-  head(merge_table)
   # distance normalization
   merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
   
@@ -91,7 +90,7 @@ collect_individual_profiles <- function(inputdir,
       
       value_measure$identifier <- str_remove(value_measure$identifier, regular_expression)
       
-      # removes trailing underscore or hypen
+      # removes trailing underscore or hyphen
       value_measure$identifier <- str_remove(value_measure$identifier, "(_|-| )($)")
       
     }

@@ -11,7 +11,7 @@ source("process_data.R")
 source("plot_data.R")
 source("process_profiles.R")
 source("plot_profiles.R")
-#source("plot_intensity_ratio.R")
+source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
@@ -37,7 +37,7 @@ series_regex = "(?<=_)\\d*($)"
 plot_background_subtract = TRUE
 
 # analyze signal profiles
-analyze_signal_profiles = TRUE
+analyze_signal_profiles = FALSE
 
 # Binning for intensity profiles
 # or different method for binning
@@ -219,7 +219,187 @@ detection_plots <- plot_detection_measurements(merge_cell_organelle,
 do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
 
-# if (analyze_signal_profiles) {
+# ==============================================================================
+inputdir = directory
+regular_expression = series_regex
+series = single_series
+cell_measure_data = cell_measure_filter
+
+name = "intensityDistance.csv"
+
+cell_col = ncol(cell_measure_data)
+
+file_name <- paste0(inputdir,name)
+
+value_filenames <- list.files(path = inputdir,
+                              recursive=TRUE, 
+                              pattern=name,
+                              full.names = TRUE)
+
+value_list <- list()
+
+# ------------------------------------------------------------------------------
+# opening files that contain intensity information
+print("Retrieving individual files")
+
+for (name in value_filenames) {
+  
+  print(paste("Processing file: ", name))
+  
+  value_measure  <- read.csv(name, header = TRUE)
+  
+  # check if intDistance.csv is empty if true skip
+  if(nrow(value_measure) == 0) {
+    print(paste("Skipping file: ", name))
+    next
+  }
+  
+  # TODO needs to default to something that is sensible if invalid
+  if (series) {
+    
+    value_measure$series <- str_extract(value_measure$identifier, regular_expression)
+    
+    value_measure$identifier <- str_remove(value_measure$identifier, regular_expression)
+    
+    # removes trailing underscore or hyphen
+    value_measure$identifier <- str_remove(value_measure$identifier, "(_|-| )($)")
+    
+  }
+  
+  # TODO check if this works
+  if (cell_col == 12 && value_col == 9) {
+    
+    value_measure_mean <- value_measure %>% 
+      group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
+      summarise(mean_orgaIntensity = mean(orgaIntensity), mean_measureIntensity = mean(measureIntensity))
+    
+  } else {
+    
+    value_measure_mean <- value_measure %>% 
+      group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
+      summarise(mean_orgaIntensity = mean(orgaIntensity))
+    
+  }
+
+  # merge cell measurements with intensity profiles
+  merge_table <- merge(cell_measure_data, 
+                       value_measure_mean, 
+                       by = c("identifier", "series", "cell"))
+
+  # distance normalization
+  merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
+  
+  # background subtraction for detection intensity
+  merge_table$orgaIntensityBacksub <- merge_table$mean_orgaIntensity - merge_table$orgaMeanBackground
+  
+  if (cell_col == 12 && value_col == 9) {
+    
+    merge_table$measureIntensityBackSub <- merge_table$mean_measureIntensity - merge_table$measureMeanBackground
+    
+  }
+  
+  value_list[[name]] <- merge_table
+  
+}
+
+value_list_coll <- do.call("rbind", value_list)
+# ------------------------------------------------------------------------------
+intensity_ratio_results <- compute_intensity_ration(value_list_coll, 10, bin_width, 0)
+
+plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
+
+# ------------------------------------------------------------------------------
+# create different grouped means
+value_list_perSeries <- value_list_coll %>% 
+  group_by(identifier, series, intensityDistanceCalibrated) %>% 
+  summarise(mean = mean(orgaIntensityBacksub))
+
+value_list_treat <- value_list_coll %>% 
+  group_by(identifier,intensityDistanceCalibrated) %>% 
+  summarise(mean = mean(orgaIntensityBacksub))
+
+value_list_treat_norm <- value_list_coll %>% 
+  group_by(identifier, intensityDistanceNormalized) %>% 
+  summarise(mean = mean(orgaIntensityBacksub))
+
+head(value_list_treat)
+
+# creates binned data
+bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
+  
+  output_apply <- tapply(value, 
+                         cut(bin, seq(0, limit, by=width)), 
+                         mean)
+  
+  # transform output of tapply to data frame
+  binned_values <- as.data.frame(as.table(output_apply))
+  colnames(binned_values) <- c("bin", variable_name)
+  
+  # cleanup data frame
+  binned_values$bin <- str_remove_all(binned_values$bin, "[]\\(]")
+  binned_values$bin <- str_replace(binned_values$bin, ",", "-")
+  
+  binned_values <- binned_values %>% mutate(row = row_number())
+  
+  return(binned_values)
+  
+}
+
+# ------------------------------------------------------------------------------
+# create binned data 
+identifier_count <- as.data.frame(table(value_list_treat_norm$identifier))
+
+subset_list <- list()
+
+for (name_id in identifier_count$Var1){
+
+  subset_table <- subset(value_list_treat_norm, identifier == name_id)
+  
+  subset_bin <- bin_distance_values_new(subset_table$intensityDistanceNormalized, 
+                                        subset_table$mean, 
+                                        "binned_values", 
+                                        bin_width_norm, 
+                                        upper_limit_norm)
+  
+  subset_list[[name_id]] <- subset_bin
+  
+}
+
+binned_value_list <- do.call("rbind", subset_list)
+binned_value_list1 <- tibble::rownames_to_column(binned_value_list, "nameindex")
+binned_value_list1_indices <- str_split_fixed(binned_value_list1$nameindex, "\\.", 2)
+binned_value_list2 <- cbind(binned_value_list1_indices, binned_value_list1)
+colnames(binned_value_list2)[1] <- "identifier"
+colnames(binned_value_list2)[2] <- "index"
+head(binned_value_list2)
+
+# plots peak normalized and distance normalized intensity profiles
+ggplot(data=binned_value_list2,  aes(x=row, y=binned_values, color=identifier)) +
+  geom_line(aes(color=identifier), na.rm=TRUE) +
+  geom_point(aes(color=identifier), na.rm=TRUE) +
+  ylab("Fluorescent intensity (A.U.)") +
+  xlab("Normalized distance from nucleus") +
+  ggtitle(sprintf("Intensity map distance normalized \nOrga channel"))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# ==============================================================================
+if (analyze_signal_profiles) {
   
   name_value_measure = "intensityDistance.csv"
   
@@ -352,5 +532,5 @@ do.call(grid.arrange, detection_plots)
   
   do.call(grid.arrange, organelle_profile)
   
-# }
+}
 

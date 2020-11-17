@@ -160,32 +160,6 @@ grouped_intensity_map <- function(individual_maps) {
     
   }
   
-  # peak normalisation
-  name_count_value <- as.data.frame(table(value_list_treat_norm$identifier))
-  col_intensity_map <- ncol(value_list_treat_norm)
-  value_list_peak <- list()
-  
-  for (name in name_count_value$Var1){
-    
-    data_per_name <- subset(value_list_treat_norm, identifier == name)
-    
-    max_value_profiles = max(data_per_name$orga_mean, na.rm = TRUE)
-    data_per_name$orga_peak_norm <- sapply(data_per_name$orga_mean, function(x){x /  max_value_profiles})
-    
-    if ( col_intensity_map == 4) {
-      
-      max_value_profiles = max(data_per_name$measure_mean, na.rm = TRUE)
-      data_per_name$measure_peak_norm <- sapply(data_per_name$measure_mean, function(x){x /  max_value_profiles})
-      
-    }
-    
-    value_list_peak[[name]] <- data_per_name
-    
-  }
-  
-  # binds collection of normalized value plots and binds them into one dataframe
-  norm_list_value <- do.call("rbind", value_list_peak)
-  
   return (list("raw" = value_list_treat, "norm" = norm_list_value ))
   
 }

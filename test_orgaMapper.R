@@ -16,7 +16,8 @@ source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
+directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
+# directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
 
 result_name = "Analysis_test"
 
@@ -329,17 +330,6 @@ bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
   
 }
 
-# ------------------------------------------------------------------------------
-# collect individual files
-individual_intensity_maps <- collect_individual_profiles_new(directory, series_regex, single_series, cell_measure_filter)
-rownames(individual_intensity_maps) <- c()
-head(individual_intensity_maps)
-
-# create intensity ratio data and plots
-intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 10, bin_width, 0)
-plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
-
-# ------------------------------------------------------------------------------
 # create different grouped means
 grouped_intensity_map <- function(individual_maps) {
   
@@ -348,7 +338,7 @@ grouped_intensity_map <- function(individual_maps) {
   if (intensity_maps_col == 18) {
     
     if (plot_background_subtract) {
-    
+      
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
@@ -371,7 +361,7 @@ grouped_intensity_map <- function(individual_maps) {
   } else {
     
     if (plot_background_subtract) {
-    
+      
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub))
@@ -402,12 +392,12 @@ grouped_intensity_map <- function(individual_maps) {
   for (name in name_count_value$Var1){
     
     data_per_name <- subset(value_list_treat_norm, identifier == name)
-  
+    
     max_value_profiles = max(data_per_name$orga_mean, na.rm = TRUE)
     data_per_name$orga_peak_norm <- sapply(data_per_name$orga_mean, function(x){x /  max_value_profiles})
     
     if ( col_intensity_map == 4) {
-    
+      
       max_value_profiles = max(data_per_name$measure_mean, na.rm = TRUE)
       data_per_name$measure_peak_norm <- sapply(data_per_name$measure_mean, function(x){x /  max_value_profiles})
       
@@ -424,11 +414,23 @@ grouped_intensity_map <- function(individual_maps) {
   
 }
 
+# ------------------------------------------------------------------------------
+# collect individual files
+individual_intensity_maps <- collect_individual_profiles_new(directory, series_regex, single_series, cell_measure_filter)
+rownames(individual_intensity_maps) <- c()
+head(individual_intensity_maps)
 
+# create intensity ratio data and plots
+intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 10, bin_width, 0)
+plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
+
+# group intensity maps
 value_lists <- grouped_intensity_map(individual_intensity_maps)
 
 head(value_lists$raw)
 head(value_lists$norm)
+
+
 # ------------------------------------------------------------------------------
 # create binned data 
 identifier_count <- as.data.frame(table(value_list_treat_norm$identifier))

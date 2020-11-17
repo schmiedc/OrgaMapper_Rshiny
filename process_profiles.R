@@ -1,81 +1,31 @@
-library(tidyverse)
 
-# creates binned data
-bin_distance_values <- function(bin, value, variable_name, width, limit) {
+# opening files that contain intensity information
+collect_individual_profiles_new <- function(inputdir, regular_expression, series, cell_measure_data) {
   
-  output_apply <- tapply(value, 
-                         cut(bin, seq(0, limit, by=width)), 
-                         mean)
-  
-  # transform output of tapply to data frame
-  binned_values <- as.data.frame(as.table(output_apply))
-  colnames(binned_values) <- c("bin", variable_name)
-  
-  # cleanup data frame
-  binned_values$bin <- str_remove_all(binned_values$bin, "[]\\(]")
-  binned_values$bin <- str_replace(binned_values$bin, ",", "-")
-  
-  binned_values <- binned_values %>% mutate(row = row_number())
-  
-  return(binned_values)
-  
-}
-
-process_profile_data <- function(value_data,
-                                 per_cell_data,
-                                 c_col,
-                                 v_col) {
-  
-  # merge cell measurements with intensity profiles
-  merge_table <- merge(per_cell_data, 
-                             value_data, 
-                             by = c("identifier", "series", "cell"))
-  
-  # distance normalization
-  merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
-  
-  # background subtraction for detection intensity
-  merge_table$orgaIntensityBacksub <- merge_table$orgaIntensity - merge_table$orgaMeanBackground
-  
-  if (c_col == 12 && v_col == 9) {
-    
-    merge_table$measureIntensityBackSub <- merge_table$measureIntensity - merge_table$measureMeanBackground
-    
-  }
-  
-  return (merge_table)
-  
-}
-
-collect_individual_profiles <- function(inputdir,
-                                        name,
-                                        cell_measure_data,
-                                        series,
-                                        regular_expression,
-                                        limit,
-                                        width,
-                                        limit_norm,
-                                        width_norm) {
-
   cell_col = ncol(cell_measure_data)
-
+  
+  
+  
+  name = "intensityDistance.csv"
+  
+  print("Retrieving individual files")
+  
   file_name <- paste0(inputdir,name)
   
   value_filenames <- list.files(path = inputdir,
                                 recursive=TRUE, 
                                 pattern=name,
                                 full.names = TRUE)
-
-  value_list_norm <- list()
-  value_list <- list()
   
-  print("Retrieving individual files")
+  value_list <- list()
   
   for (name in value_filenames) {
     
     print(paste("Processing file: ", name))
     
     value_measure  <- read.csv(name, header = TRUE)
+    
+    value_col = ncol(value_measure)
     
     # check if intDistance.csv is empty if true skip
     if(nrow(value_measure) == 0) {
@@ -95,92 +45,147 @@ collect_individual_profiles <- function(inputdir,
       
     }
     
-    value_col = ncol(value_measure)
-    
-    print("Merging with cell data")
-    merge_table_value <- process_profile_data(value_measure,
-                                              cell_measure_data,
-                                              cell_col,
-                                              value_col)
-
-    print("Bin normalized distance of intensity background subtracted values")
-    value_result_norm <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
-                                             merge_table_value$orgaIntensityBacksub, 
-                                             "orgaIntensityBacksub_BinNorm",
-                                             width_norm,
-                                             limit_norm)
-    
-    print("Bin raw distance of intensity background subtracted values")
-    value_result <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
-                                        merge_table_value$orgaIntensityBacksub, 
-                                        "orgaIntensityBacksub_Bin",
-                                        width,
-                                        limit)
-    
-    print("Bin normalized distance of intensity raw values")
-    value_result_norm_raw <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
-                                                 merge_table_value$orgaIntensity, 
-                                                 "orgaIntensity_BinNorm",
-                                                 width_norm,
-                                                 limit_norm)
-    
-    print("Bin raw distance of intensity raw values")
-    value_result_raw <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
-                                            merge_table_value$orgaIntensity, 
-                                            "orgaIntensity_Bin",
-                                            width,
-                                            limit)
-    
-    value_result_norm <- merge(value_result_norm, value_result_norm_raw, by = c("bin","row"))
-    value_result <- merge(value_result, value_result_raw, by = c("bin","row"))
-    
+    # TODO check if this works
     if (cell_col == 12 && value_col == 9) {
       
-      print("Mapping measurement channel")
-      binned_measure_value_norm <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
-                                                       merge_table_value$measureIntensityBackSub, 
-                                                       "measureIntensityBacksub_BinNorm",
-                                                       width_norm,
-                                                       limit_norm)
+      value_measure_mean <- value_measure %>% 
+        group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
+        summarise(mean_orgaIntensity = mean(orgaIntensity), mean_measureIntensity = mean(measureIntensity))
       
-      binned_measure_value <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
-                                                  merge_table_value$measureIntensityBackSub, 
-                                                  "measureIntensityBacksub_Bin",
-                                                  width,
-                                                  limit)
+    } else {
       
-      binned_measure_value_norm_raw <- bin_distance_values(merge_table_value$intensityDistanceNormalized, 
-                                                           merge_table_value$measureIntensity, 
-                                                           "measureIntensity_BinNorm",
-                                                           width_norm,
-                                                           limit_norm)
-      
-      binned_measure_value_raw <- bin_distance_values(merge_table_value$intensityDistanceCalibrated, 
-                                                      merge_table_value$measureIntensity, 
-                                                      "measureIntensity_Bin",
-                                                      width,
-                                                      limit)
-      
-      value_result_norm <- merge(value_result_norm, binned_measure_value_norm, by = c("bin","row"))
-      value_result <- merge(value_result, binned_measure_value, by = c("bin","row"))
-      value_result_norm <- merge(value_result_norm, binned_measure_value_norm_raw, by = c("bin","row"))
-      value_result <- merge(value_result, binned_measure_value_raw, by = c("bin","row"))
+      value_measure_mean <- value_measure %>% 
+        group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
+        summarise(mean_orgaIntensity = mean(orgaIntensity))
       
     }
     
-    table.info <- merge_table_value[1,1:12]
-    value_result_norm <- merge(table.info, value_result_norm, by=NULL)
-    value_result<- merge(table.info, value_result, by=NULL)
+    # merge cell measurements with intensity profiles
+    merge_table <- merge(cell_measure_data, 
+                         value_measure_mean, 
+                         by = c("identifier", "series", "cell"))
     
-    value_list_norm[[name]] <- value_result_norm
-    value_list[[name]] <- value_result
+    # distance normalization
+    merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
+    
+    # background subtraction for detection intensity
+    merge_table$orgaIntensityBacksub <- merge_table$mean_orgaIntensity - merge_table$orgaMeanBackground
+    
+    if (cell_col == 12 && value_col == 9) {
+      
+      merge_table$measureIntensityBackSub <- merge_table$mean_measureIntensity - merge_table$measureMeanBackground
+      
+    }
+    
+    value_list[[name]] <- merge_table
     
   }
   
-  # binds collection 
-  value_list_norm_coll <- do.call("rbind", value_list_norm)
   value_list_coll <- do.call("rbind", value_list)
+  gc()
+  return(value_list_coll)
+}
 
-  return (list("raw" = value_list_coll, "norm" = value_list_norm_coll ))
+bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
+  
+  output_apply <- tapply(value, 
+                         cut(bin, seq(0, limit, by=width)), 
+                         mean)
+  
+  # transform output of tapply to data frame
+  binned_values <- as.data.frame(as.table(output_apply))
+  colnames(binned_values) <- c("bin", variable_name)
+  
+  # cleanup data frame
+  binned_values$bin <- str_remove_all(binned_values$bin, "[]\\(]")
+  binned_values$bin <- str_replace(binned_values$bin, ",", "-")
+  
+  binned_values <- binned_values %>% mutate(row = row_number())
+  
+  return(binned_values)
+  
+}
+
+# create different grouped means
+grouped_intensity_map <- function(individual_maps) {
+  
+  intensity_maps_col = ncol(individual_maps)
+  
+  if (intensity_maps_col == 18) {
+    
+    if (plot_background_subtract) {
+      
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
+      
+    } else {
+      
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
+    }
+    
+  } else {
+    
+    if (plot_background_subtract) {
+      
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(orgaIntensityBacksub))
+      
+    } else {
+      
+      value_list_treat <- individual_maps %>% 
+        group_by(identifier,intensityDistanceCalibrated) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity))
+      
+      value_list_treat_norm <- individual_maps %>% 
+        group_by(identifier, intensityDistanceNormalized) %>% 
+        summarise(orga_mean = mean(mean_orgaIntensity))
+      
+    }
+    
+  }
+  
+  # peak normalisation
+  name_count_value <- as.data.frame(table(value_list_treat_norm$identifier))
+  col_intensity_map <- ncol(value_list_treat_norm)
+  value_list_peak <- list()
+  
+  for (name in name_count_value$Var1){
+    
+    data_per_name <- subset(value_list_treat_norm, identifier == name)
+    
+    max_value_profiles = max(data_per_name$orga_mean, na.rm = TRUE)
+    data_per_name$orga_peak_norm <- sapply(data_per_name$orga_mean, function(x){x /  max_value_profiles})
+    
+    if ( col_intensity_map == 4) {
+      
+      max_value_profiles = max(data_per_name$measure_mean, na.rm = TRUE)
+      data_per_name$measure_peak_norm <- sapply(data_per_name$measure_mean, function(x){x /  max_value_profiles})
+      
+    }
+    
+    value_list_peak[[name]] <- data_per_name
+    
+  }
+  
+  # binds collection of normalized value plots and binds them into one dataframe
+  norm_list_value <- do.call("rbind", value_list_peak)
+  
+  return (list("raw" = value_list_treat, "norm" = norm_list_value ))
   
 }

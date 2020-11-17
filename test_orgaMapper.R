@@ -15,8 +15,8 @@ source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-#directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
-directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
+directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
+#directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
 
 result_name = "Analysis_test"
 
@@ -220,7 +220,7 @@ detection_plots <- plot_detection_measurements(merge_cell_organelle,
 do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
 
-#if (analyze_signal_profiles) {
+if (analyze_signal_profiles) {
   
   # ------------------------------------------------------------------------------
   # collect individual files
@@ -288,5 +288,5 @@ do.call(grid.arrange, detection_plots)
     
   }
     
-#}
+}
 

@@ -488,135 +488,62 @@ server <- function(input, output, session) {
         print(orga)
         
       })
-
+      
       if (intensity_profiles) {
         
-        print("Processing data for intensity maps")
-        
-        name_value_measure = "intensityDistance.csv"
-        
-        profile_collected <- collect_individual_profiles(directory,
-                                                         name_value_measure,
-                                                         cell_measure_filter,
-                                                         single_series,
-                                                         series_regex,
-                                                         upper_limit,
-                                                         bin_width,
-                                                         upper_limit_norm,
-                                                         bin_width_norm)
-        
-        value_list <- profile_collected$raw
-        value_list_norm <- profile_collected$norm
-        rownames(value_list) <- c()
-        rownames(value_list_norm) <- c()
-
         # ------------------------------------------------------------------------------
-        print("Saving intensity map data")
-        incProgress(1/progress, detail = paste("Saving intensity data", 5))
-        # ------------------------------------------------------------------------------
-        if (cell_column == 10 && orga_column == 10) {
-          
-          value_list_result <- value_list %>%
-            rename(
-              cell_area = cellArea,
-              orga_numberOfDetections = numberDetections,
-              orga_intensity = orgaMeanIntensity,
-              orga_background = orgaMeanBackground,
-              measure_intensity = measureMeanIntensity,
-              measure_background = measureMeanBackground,
-              orga_intensity_backsub = orgaMeanIntensityBacksub,
-              measure_intensity_backsub = measureMeanIntensityBacksub,
-              orga_intensityMap_backsub = orgaIntensityBacksub_Bin,
-              orga_intensityMap = orgaIntensity_Bin,
-              measure_intensityMap_backsub = measureIntensityBacksub_Bin,
-              measure_intensityMap = measureIntensity_Bin
-            )
-          
-        } else {
-          
-          value_list_result <- value_list %>%
-            rename(
-              cell_area = cellArea,
-              orga_numberOfDetections = numberDetections,
-              orga_intensity = orgaMeanIntensity,
-              orga_background = orgaMeanBackground,
-              orga_intensity_backsub = orgaMeanIntensityBacksub,
-              orga_intensityMap_backsub = orgaIntensityBacksub_Bin,
-              orga_intensityMap = orgaIntensity_Bin
-            )
-          
-        }
+        # collect individual files
+        print("Computing individual intensity maps")
+        individual_intensity_maps <- collect_individual_profiles_new(directory, 
+                                                                     series_regex, 
+                                                                     single_series, 
+                                                                     cell_measure_filter)
+        rownames(individual_intensity_maps) <- c()
+        head(individual_intensity_maps)
         
-        write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
-                   value_list_result, 
-                   sheetName="Sheet1",  
-                   col.names=TRUE, 
-                   row.names=TRUE, 
-                   append=FALSE, 
-                   showNA=TRUE)
+        # create intensity ratio data and plots
         
-        # ----------------------------------------------------------------------------
-        # compute & plot intensity ratio
-        print("Create intensity ratio plot")
-        incProgress(1/progress, detail = paste("Saving intensity data", 6))
-        intensity_ratio_results <- compute_intensity_ration(value_list_result, 10, bin_width, 0)
+        print("Computing and plotting intensity ratio")
+        intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 
+                                                            10, 
+                                                            bin_width, 
+                                                            0)
         
         plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
         
-        # ----------------------------------------------------------------------------
-        if (cell_column == 10 && orga_column == 10) {
-          
-          value_list_norm_result <- value_list_norm %>%
-            rename(
-              cell_area = cellArea,
-              orga_numberOfDetections = numberDetections,
-              orga_intensity = orgaMeanIntensity,
-              orga_background = orgaMeanBackground,
-              measure_intensity = measureMeanIntensity,
-              measure_background = measureMeanBackground,
-              orga_intensity_backsub = orgaMeanIntensityBacksub,
-              measure_intensity_backsub = measureMeanIntensityBacksub,
-              orga_intensityMapNorm_backsub = orgaIntensityBacksub_BinNorm,
-              orga_intensityMapNorm = orgaIntensity_BinNorm,
-              measure_intensityMapNorm_backsub = measureIntensityBacksub_BinNorm,
-              measure_intensityMapNorm = measureIntensity_BinNorm
-            )
-          
-        } else {
-          
-          value_list_norm_result <- value_list_norm %>%
-            rename(
-              cell_area = cellArea,
-              orga_numberOfDetections = numberDetections,
-              orga_intensity = orgaMeanIntensity,
-              orga_background = orgaMeanBackground,
-              orga_intensity_backsub = orgaMeanIntensityBacksub,
-              orga_intensityMapNorm_backsub = orgaIntensityBacksub_BinNorm,
-              orga_intensityMapNorm = orgaIntensity_BinNorm
-              
-            )
-          
-        }
+        # group intensity maps
+        print("Computing mean of individual intensity maps")
+        incProgress(1/progress, detail = paste("Plotting intensity ratio", 5))
+        value_lists <- grouped_intensity_map(individual_intensity_maps)
         
-        write.xlsx(file = paste0( result_path,  "_intensityProfile_norm.xlsx", sep = ""), 
-                   value_list_norm_result, 
+        intensity_map_result <- value_lists$raw
+        intensity_map_result_norm <- value_lists$norm
+        
+        head(intensity_map_result)
+        # ------------------------------------------------------------------------------
+        print("Saving raw intensity maps")
+        incProgress(1/progress, detail = paste("Saving intensity data", 6))
+        write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
+                   intensity_map_result, 
                    sheetName="Sheet1",  
                    col.names=TRUE, 
                    row.names=TRUE, 
                    append=FALSE, 
                    showNA=TRUE)
         
-        # ----------------------------------------------------------------------------
-        
+        # ------------------------------------------------------------------------------
+        print("Plotting intensity maps")
         incProgress(1/progress, detail = paste("Plotting intensity maps", 7))
         
-        print("Plotting intensity maps")
-        organelle_profile <- plot_profiles(value_list, 
-                                      value_list_norm, 
-                                      "orga", 
-                                      plots_intensity, 
-                                      plot_background_subtract)
-
+        organelle_profile <- plot_intensity_map(intensity_map_result, 
+                                         intensity_map_result_norm, 
+                                         "orga", 
+                                         bin_width, 
+                                         upper_limit,
+                                         bin_width_norm,
+                                         upper_limit_norm,
+                                         plots_intensity)
+        
         output$intProfile_organelle <- renderPlot({
           
           intProfile_orga <- do.call(grid.arrange, organelle_profile)
@@ -624,14 +551,16 @@ server <- function(input, output, session) {
           
         })
         
-      
         if (cell_column == 10 && orga_column == 10) {
           
-          measure_profile <- plot_profiles(value_list, 
-                                            value_list_norm, 
-                                            "measure", 
-                                            plots_intensity, 
-                                            plot_background_subtract)
+          measure_profile <- plot_intensity_map(intensity_map_result, 
+                                              intensity_map_result_norm, 
+                                              "measure", 
+                                              bin_width, 
+                                              upper_limit,
+                                              bin_width_norm,
+                                              upper_limit_norm,
+                                              plots_intensity)
           
           output$intProfile_measure <- renderPlot({
             
@@ -639,10 +568,10 @@ server <- function(input, output, session) {
             print(intProfile_meas)
             
           })
-           
-        } 
-  
-      } 
+          
+        }
+        
+      }
       
       incProgress(1/progress, detail = paste("Done", 8))
       }) # end of progess

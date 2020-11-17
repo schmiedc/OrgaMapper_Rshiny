@@ -583,12 +583,7 @@ plot_intensity_map <- function(dataframe_calib,
   
 }
 
-head(intensity_map_result)
-head(intensity_map_result_norm)
-
-intensity_map_result$orga_mean
-intensity_map_result[["orga_mean"]]
-plots <- plot_intensity_map(intensity_map_result, 
+orga_plots <- plot_intensity_map(intensity_map_result, 
                    intensity_map_result_norm, 
                    "orga", 
                    bin_width, 
@@ -597,8 +592,9 @@ plots <- plot_intensity_map(intensity_map_result,
                    upper_limit_norm
 )
 
+do.call(grid.arrange, orga_plots)
 
-plots <- plot_intensity_map(intensity_map_result, 
+measure_plots <- plot_intensity_map(intensity_map_result, 
                             intensity_map_result_norm, 
                             "measure", 
                             bin_width, 
@@ -607,7 +603,7 @@ plots <- plot_intensity_map(intensity_map_result,
                             upper_limit_norm
 )
 
-plots[1]
+do.call(grid.arrange, measure_plots)
 
 
 

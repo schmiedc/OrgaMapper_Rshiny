@@ -15,7 +15,7 @@ source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
+directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
 
 result_name = "Analysis_test"
 
@@ -220,111 +220,94 @@ do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
 
 # ==============================================================================
-inputdir = directory
-regular_expression = series_regex
-series = single_series
-cell_measure_data = cell_measure_filter
 
-name = "intensityDistance.csv"
-
-cell_col = ncol(cell_measure_data)
-
-file_name <- paste0(inputdir,name)
-
-value_filenames <- list.files(path = inputdir,
-                              recursive=TRUE, 
-                              pattern=name,
-                              full.names = TRUE)
-
-value_list <- list()
-
-# ------------------------------------------------------------------------------
 # opening files that contain intensity information
-print("Retrieving individual files")
-
-for (name in value_filenames) {
+collect_individual_profiles_new <- function(inputdir, regular_expression, series, cell_measure_data) {
   
-  print(paste("Processing file: ", name))
+  cell_col = ncol(cell_measure_data)
   
-  value_measure  <- read.csv(name, header = TRUE)
+ 
   
-  # check if intDistance.csv is empty if true skip
-  if(nrow(value_measure) == 0) {
-    print(paste("Skipping file: ", name))
-    next
+  name = "intensityDistance.csv"
+  
+  print("Retrieving individual files")
+  
+  file_name <- paste0(inputdir,name)
+  
+  value_filenames <- list.files(path = inputdir,
+                                recursive=TRUE, 
+                                pattern=name,
+                                full.names = TRUE)
+  
+  value_list <- list()
+  
+  for (name in value_filenames) {
+    
+    print(paste("Processing file: ", name))
+    
+    value_measure  <- read.csv(name, header = TRUE)
+    
+    value_col = ncol(value_measure)
+    
+    # check if intDistance.csv is empty if true skip
+    if(nrow(value_measure) == 0) {
+      print(paste("Skipping file: ", name))
+      next
+    }
+    
+    # TODO needs to default to something that is sensible if invalid
+    if (series) {
+      
+      value_measure$series <- str_extract(value_measure$identifier, regular_expression)
+      
+      value_measure$identifier <- str_remove(value_measure$identifier, regular_expression)
+      
+      # removes trailing underscore or hyphen
+      value_measure$identifier <- str_remove(value_measure$identifier, "(_|-| )($)")
+      
+    }
+    
+    # TODO check if this works
+    if (cell_col == 12 && value_col == 9) {
+      
+      value_measure_mean <- value_measure %>% 
+        group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
+        summarise(mean_orgaIntensity = mean(orgaIntensity), mean_measureIntensity = mean(measureIntensity))
+      
+    } else {
+      
+      value_measure_mean <- value_measure %>% 
+        group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
+        summarise(mean_orgaIntensity = mean(orgaIntensity))
+      
+    }
+  
+    # merge cell measurements with intensity profiles
+    merge_table <- merge(cell_measure_data, 
+                         value_measure_mean, 
+                         by = c("identifier", "series", "cell"))
+  
+    # distance normalization
+    merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
+    
+    # background subtraction for detection intensity
+    merge_table$orgaIntensityBacksub <- merge_table$mean_orgaIntensity - merge_table$orgaMeanBackground
+    
+    if (cell_col == 12 && value_col == 9) {
+      
+      merge_table$measureIntensityBackSub <- merge_table$mean_measureIntensity - merge_table$measureMeanBackground
+      
+    }
+    
+    value_list[[name]] <- merge_table
+    
   }
   
-  # TODO needs to default to something that is sensible if invalid
-  if (series) {
-    
-    value_measure$series <- str_extract(value_measure$identifier, regular_expression)
-    
-    value_measure$identifier <- str_remove(value_measure$identifier, regular_expression)
-    
-    # removes trailing underscore or hyphen
-    value_measure$identifier <- str_remove(value_measure$identifier, "(_|-| )($)")
-    
-  }
-  
-  # TODO check if this works
-  if (cell_col == 12 && value_col == 9) {
-    
-    value_measure_mean <- value_measure %>% 
-      group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
-      summarise(mean_orgaIntensity = mean(orgaIntensity), mean_measureIntensity = mean(measureIntensity))
-    
-  } else {
-    
-    value_measure_mean <- value_measure %>% 
-      group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
-      summarise(mean_orgaIntensity = mean(orgaIntensity))
-    
-  }
-
-  # merge cell measurements with intensity profiles
-  merge_table <- merge(cell_measure_data, 
-                       value_measure_mean, 
-                       by = c("identifier", "series", "cell"))
-
-  # distance normalization
-  merge_table$intensityDistanceNormalized <- merge_table$intensityDistanceCalibrated / merge_table$ferets
-  
-  # background subtraction for detection intensity
-  merge_table$orgaIntensityBacksub <- merge_table$mean_orgaIntensity - merge_table$orgaMeanBackground
-  
-  if (cell_col == 12 && value_col == 9) {
-    
-    merge_table$measureIntensityBackSub <- merge_table$mean_measureIntensity - merge_table$measureMeanBackground
-    
-  }
-  
-  value_list[[name]] <- merge_table
-  
+  value_list_coll <- do.call("rbind", value_list)
+  gc()
+  return(value_list_coll)
 }
 
-value_list_coll <- do.call("rbind", value_list)
-# ------------------------------------------------------------------------------
-intensity_ratio_results <- compute_intensity_ration(value_list_coll, 10, bin_width, 0)
-
-plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
-
-# ------------------------------------------------------------------------------
-# create different grouped means
-value_list_perSeries <- value_list_coll %>% 
-  group_by(identifier, series, intensityDistanceCalibrated) %>% 
-  summarise(mean = mean(orgaIntensityBacksub))
-
-value_list_treat <- value_list_coll %>% 
-  group_by(identifier,intensityDistanceCalibrated) %>% 
-  summarise(mean = mean(orgaIntensityBacksub))
-
-value_list_treat_norm <- value_list_coll %>% 
-  group_by(identifier, intensityDistanceNormalized) %>% 
-  summarise(mean = mean(orgaIntensityBacksub))
-
-head(value_list_treat)
-
-# creates binned data
 bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
   
   output_apply <- tapply(value, 
@@ -344,6 +327,33 @@ bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
   return(binned_values)
   
 }
+
+# ------------------------------------------------------------------------------
+# collect individual files
+individual_intensity_maps <- collect_individual_profiles_new(directory, series_regex, single_series, cell_measure_filter)
+rownames(individual_intensity_maps) <- c()
+head(individual_intensity_maps)
+
+# create intensity ratio data and plots
+intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 10, bin_width, 0)
+plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
+
+# ------------------------------------------------------------------------------
+# create different grouped means
+value_list_treat <- individual_intensity_maps %>% 
+  group_by(identifier,intensityDistanceCalibrated) %>% 
+  summarise(mean = mean(orgaIntensityBacksub))
+
+value_list_treat_norm <- individual_intensity_maps %>% 
+  group_by(identifier, intensityDistanceNormalized) %>% 
+  summarise(mean = mean(orgaIntensityBacksub))
+
+
+
+
+
+
+
 
 # ------------------------------------------------------------------------------
 # create binned data 

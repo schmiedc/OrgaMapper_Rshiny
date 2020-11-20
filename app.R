@@ -40,9 +40,9 @@ source("plot_intensity_ratio.R")
 #               tidyverse: install.packages("tidyverse")
 #               lazyeval: install.packages("lazyeval")
 #
-#      VERSION: 0.4.0
+#      VERSION: 0.4.1
 #      CREATED: 2020-10-01
-#     REVISION: 2020-11-03
+#     REVISION: 2020-11-20
 #
 # ============================================================================
 ui <- fluidPage( 

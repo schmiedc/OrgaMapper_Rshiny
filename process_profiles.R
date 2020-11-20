@@ -107,13 +107,13 @@ bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
 }
 
 # create different grouped means
-grouped_intensity_map <- function(individual_maps) {
+grouped_intensity_map <- function(individual_maps, background_subtract) {
   
   intensity_maps_col = ncol(individual_maps)
   
   if (intensity_maps_col == 18) {
     
-    if (plot_background_subtract) {
+    if (background_subtract) {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
@@ -136,7 +136,7 @@ grouped_intensity_map <- function(individual_maps) {
     
   } else {
     
-    if (plot_background_subtract) {
+    if (background_subtract) {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 

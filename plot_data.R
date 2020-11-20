@@ -125,8 +125,8 @@ plot_cell_measurements <- function(cell_data_table,
                          "Cell number of detections", 
                          "Cell avg. intensity \nOrganelle channel")
   
-  measure1_label <- list("Ferets diameter (µm)", 
-                         "Cell area (µm²)", 
+  measure1_label <- list("Ferets diameter (\u00b5m)", 
+                         "Cell area (\u00b5m\u00b2)", 
                          "Average count", 
                          "Fluorescent intensity (A.U.)")
   
@@ -277,7 +277,7 @@ plot_detection_measurements <- function(full_data_table,
                                             group = name, 
                                             color = name)) + 
     geom_line() +
-    xlab("Cal distance from Nucleus (µm)") +
+    xlab("Cal distance from Nucleus (\u00b5m)") +
     ylab("Lysosome density") +
     ggtitle("Orga distance distribution") +
     scale_x_continuous(expand = c(0, 0)) + # force start at 0
@@ -372,7 +372,7 @@ plot_detection_measurements <- function(full_data_table,
                          " ",
                          "Detection channel")
   
-  measure2_label <- list("Distance (µm)", 
+  measure2_label <- list("Distance (\u00b5m)", 
                          "Normalized distance",
                          "Fluorescent intensity (A.U.)")
   

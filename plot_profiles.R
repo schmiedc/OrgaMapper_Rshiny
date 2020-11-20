@@ -107,7 +107,7 @@ plot_intensity_map <- function(dataframe_calib,
     scale_x_continuous(breaks=binned_list2$row, labels=binned_list2$bin) +
     theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5)) +
     ylab("Fluorescent intensity (A.U.)") +
-    xlab("Normalized distance from nucleus") +
+    xlab("Distance from nucleus (\u00b5m)") +
     ggtitle(sprintf("Intensity map distance normalized \n%s channel", channel_string))
   
   ggsave(plot = map_calib,

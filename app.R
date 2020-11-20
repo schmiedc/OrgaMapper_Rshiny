@@ -509,6 +509,14 @@ server <- function(input, output, session) {
                                                             bin_width, 
                                                             0)
         
+        write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
+                   intensity_ratio_results, 
+                   sheetName="Sheet1",  
+                   col.names=TRUE, 
+                   row.names=TRUE, 
+                   append=FALSE, 
+                   showNA=TRUE)
+        
         plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
         
         # group intensity maps

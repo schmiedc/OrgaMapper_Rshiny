@@ -15,7 +15,8 @@ source("plot_intensity_ratio.R")
 # ==============================================================================
 # Params
 # path to folder where the directories for the measurements are
-directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
+#directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
+directory = "/home/schmiedc/Desktop/OrgaMapper_Data/size_MTM1KOvsWT/output_test/"
 #directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
 
 result_name = "Analysis_test"
@@ -31,7 +32,7 @@ norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = FALSE
+single_series = TRUE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
@@ -238,6 +239,14 @@ if (analyze_signal_profiles) {
                                                       10, 
                                                       bin_width, 
                                                       0)
+  
+  write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
+             intensity_ratio_results, 
+             sheetName="Sheet1",  
+             col.names=TRUE, 
+             row.names=TRUE, 
+             append=FALSE, 
+             showNA=TRUE)
   
   plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
   

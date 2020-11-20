@@ -1,48 +1,94 @@
+library("openxlsx")
+
+setwd("/home/schmiedc/Desktop/OrgaMapper_Data/size_MTM1KOvsWT/output_test/")
+
+file <- read.xlsx("Analysis_test_cell.xlsx")
+head(file)
+
 # ==============================================================================
 # Statistical analysis
 # split data into control and treatment
-controlName = 'HeLa_scr'
-treatName = 'HeLa_siArl8b'
+unique(file$identifier)
 
-HeLa_scr <- subset(merged_summary, Name == controlName)
-HeLa_siArl8b <- subset(merged_summary, Name == treatName)
+controlName = 'wt_HBSS'
+treatName = 'ko_HBSS'
 
-# DistanceNorm.mean
+control <- subset(file, identifier == controlName)
+treatment <- subset(file, identifier == treatName)
+
+# ==============================================================================
+# General parameters for cells
+# CellArea
+with(file, shapiro.test(cell_area[identifier == controlName]))
+with(file, shapiro.test(cell_area[identifier == treatName]))
+
+test <- wilcox.test(control$cell_area, treatment$cell_area)
+test$p.value
+
+# Ferets
+with(file, shapiro.test(ferets[identifier == controlName]))
+with(file, shapiro.test(ferets[identifier == treatName]))
+
+test <- wilcox.test(control$ferets, treatment$ferets)
+test$p.value
+
+# orga_numberOfDetections
+with(file, shapiro.test(orga_numberOfDetections[identifier == controlName]))
+with(file, shapiro.test(orga_numberOfDetections[identifier == treatName]))
+
+test <- wilcox.test(control$orga_numberOfDetections, 
+                    treatment$orga_numberOfDetections)
+test$p.value
+
+# average intensity
+with(file, shapiro.test(orga_intensity_backsub[identifier == controlName]))
+with(file, shapiro.test(orga_intensity_backsub[identifier == treatName]))
+
+test <- wilcox.test(control$orga_intensity_backsub, 
+                    treatment$orga_intensity_backsub)
+test$p.value
+
+# ==============================================================================
+# orga_meanDistance_calibrated
 ## Shapiro-Wilk Normality Test - normality of univariante sample
-with(merged_summary, shapiro.test(DistanceNorm.mean[Name == controlName]))
-with(merged_summary, shapiro.test(DistanceNorm.mean[Name == treatName]))
+with(file, shapiro.test(orga_meanDistance_calibrated[identifier == controlName]))
+with(file, shapiro.test(orga_meanDistance_calibrated[identifier == treatName]))
 
 ## if data is normally distributed then perform F-test
 ## f-test checks if both distributions have similar variance
 
 ## not normaly distributed thus Wilcoxon Test
-test <- wilcox.test(HeLa_scr$DistanceNorm.mean, HeLa_siArl8b$DistanceNorm.mean)
+test <- wilcox.test(control$orga_meanDistance_calibrated, 
+                    treatment$orga_meanDistance_calibrated)
 test$p.value
 
-# DistanceCal.mean
-with(merged_summary, shapiro.test(DistanceCal.mean[Name == controlName]))
-with(merged_summary, shapiro.test(DistanceCal.mean[Name == treatName]))
+# orga_meanDistance_normalized
+with(file, shapiro.test(orga_meanDistance_normalized[identifier == controlName]))
+with(file, shapiro.test(orga_meanDistance_normalized[identifier == treatName]))
 
-test <- wilcox.test(HeLa_scr$DistanceCal.mean, HeLa_siArl8b$DistanceCal.mean)
+test <- wilcox.test(control$orga_meanDistance_normalized, 
+                    treatment$orga_meanDistance_normalized)
 test$p.value
 
-# CellArea
-with(merged_summary, shapiro.test(CellArea[Name == controlName]))
-with(merged_summary, shapiro.test(CellArea[Name == treatName]))
+# orga_intensityOnDetection_backsub
+with(file, shapiro.test(orga_intensityOnDetection_backsub[identifier == controlName]))
+with(file, shapiro.test(orga_intensityOnDetection_backsub[identifier == treatName]))
 
-test <- wilcox.test(HeLa_scr$CellArea, HeLa_siArl8b$CellArea)
+test <- wilcox.test(control$orga_intensityOnDetection_backsub, 
+                    treatment$orga_intensityOnDetection_backsub)
 test$p.value
 
-# Ferets
-with(merged_summary, shapiro.test(Ferets[Name == controlName]))
-with(merged_summary, shapiro.test(Ferets[Name == treatName]))
+# ==============================================================================
+ratio_file <- read.xlsx("Analysis_test_intensityRatio.xlsx", rowNames = TRUE)
+head(ratio_file)
 
-test <- wilcox.test(HeLa_scr$Ferets, HeLa_siArl8b$Ferets)
-test$p.value
+HeLa_scr_ratio <- subset(ratio_file, identifier == controlName)
+HeLa_siArl8b_ratio <- subset(ratio_file, identifier == treatName)
 
-# NumDetections
-with(merged_summary, shapiro.test(NumDetections[Name == controlName]))
-with(merged_summary, shapiro.test(NumDetections[Name == treatName]))
+# orga_intensityOnDetection_backsub
+with(ratio_file, shapiro.test(intensity_ratio[identifier == controlName]))
+with(ratio_file, shapiro.test(intensity_ratio[identifier == treatName]))
 
-test <- wilcox.test(HeLa_scr$NumDetections, HeLa_siArl8b$NumDetections)
+test <- wilcox.test(HeLa_scr_ratio$intensity_ratio, 
+                    HeLa_siArl8b_ratio$intensity_ratio)
 test$p.value

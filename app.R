@@ -514,7 +514,7 @@ server <- function(input, output, session) {
         # group intensity maps
         print("Computing mean of individual intensity maps")
         incProgress(1/progress, detail = paste("Plotting intensity ratio", 5))
-        value_lists <- grouped_intensity_map(individual_intensity_maps)
+        value_lists <- grouped_intensity_map(individual_intensity_maps, plot_background_subtract)
         
         intensity_map_result <- value_lists$raw
         intensity_map_result_norm <- value_lists$norm

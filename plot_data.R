@@ -215,7 +215,7 @@ plot_detection_measurements <- function(full_data_table,
                                         norm_distance_nucleus,
                                         background_subtract) {
   
-  # lysosome density plots
+  # Organelle density plots
   plot_list_detection <- list()
   
   name_count <- as.data.frame(table(full_data_table$identifier))
@@ -224,8 +224,8 @@ plot_detection_measurements <- function(full_data_table,
   
   head(full_data_table)
 
-  # goes through each experiment and calculates lysosome density
-  # then peak normalizes the lysosome density
+  # goes through each experiment and calculates Organelle density
+  # then peak normalizes the Organelle density
   # collects these normalized density plots in detect_list
   for (name_id in name_count$Var1){
     
@@ -270,7 +270,7 @@ plot_detection_measurements <- function(full_data_table,
   colnames(cal_list2)[1] <- "name"
   colnames(cal_list2)[2] <- "index"
   
-  # Plot Lysosome density vs normalized distance from Nucleus
+  # Plot Organelle density vs normalized distance from Nucleus
   # density plots with peak normalized data
   plot_density_cal <- ggplot(cal_list2, aes(x = x, 
                                             y = y, 
@@ -278,7 +278,7 @@ plot_detection_measurements <- function(full_data_table,
                                             color = name)) + 
     geom_line() +
     xlab("Cal distance from Nucleus (\u00b5m)") +
-    ylab("Lysosome density") +
+    ylab("Organelle density") +
     ggtitle("Orga distance distribution") +
     scale_x_continuous(expand = c(0, 0)) + # force start at 0
     scale_y_continuous(expand = c(0, 0)) + # force start at 0
@@ -300,7 +300,7 @@ plot_detection_measurements <- function(full_data_table,
   colnames(norm_list2)[1] <- "name"
   colnames(norm_list2)[2] <- "index"
 
-  # Plot Lysosome density vs normalized distance from Nucleus
+  # Plot Organelle density vs normalized distance from Nucleus
   # density plots without peak normalized data
   plot_density_raw <- ggplot(norm_list2, aes(x = x, 
                                              y = y, 
@@ -308,21 +308,21 @@ plot_detection_measurements <- function(full_data_table,
                                              color = name)) + 
     geom_line() +
     xlab("Normalized distance from nucleus") +
-    ylab("Lysosome density") +
+    ylab("Organelle density") +
     ggtitle("Orga distance distribution") +
     scale_x_continuous(expand = c(0, 0)) + # force start at 0
     scale_y_continuous(expand = c(0, 0)) + # force start at 0
     lineplot_theme()
   
   ggsave(plot = plot_density_raw,
-         file=paste0(plots, .Platform$file.sep, "orga_distance_distribution", ".pdf"), 
+         file=paste0(plots, .Platform$file.sep, "orga_distance_distribution_norm", ".pdf"), 
          width = 297, 
          height = 210, 
          units = "mm")
   
   # plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density_raw
   
-  # Plot Lysosome density vs normalized distance from Nucleus
+  # Plot Organelle density vs normalized distance from Nucleus
   # density plots with peak normalized data
   plot_density <- ggplot(norm_list2, aes(x = x, 
                                          y = peak_norm, 
@@ -330,7 +330,7 @@ plot_detection_measurements <- function(full_data_table,
                                          color = name)) + 
     geom_line() +
     xlab("Normalized distance from Nucleus") +
-    ylab("Lysosome density (peak norm)") +
+    ylab("Organelle density (peak norm)") +
     ggtitle("Orga distance distribution \nPeak normalized") +
     scale_x_continuous(expand = c(0, 0)) + # force start at 0
     scale_y_continuous(expand = c(0, 0)) + # force start at 0

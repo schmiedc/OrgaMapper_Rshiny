@@ -356,7 +356,7 @@ plot_detection_measurements <- function(full_data_table,
     
   } else {
     
-    organelle_intensity_peak = "measureDetectionPeak.mean"
+    organelle_intensity_peak = "orgaDetectionPeak.mean"
     
   }
   

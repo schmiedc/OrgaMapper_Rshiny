@@ -18,7 +18,7 @@ Then download the contents of the OrgaMapper_Rshiny repository:
 
 ## Documentation
 
-[rShiny App Execution](https://schmiedc.github.io/OrgaMapper/pages/rShinyApp.html)
+[rShiny App Execution](https://schmiedc.github.io/OrgaMapper/pages/rShinyApp.html)<br/>
 [Analysis Results](https://schmiedc.github.io/OrgaMapper/pages/analysisResults.html)
 
 

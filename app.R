@@ -70,12 +70,12 @@ ui <- fluidPage(
                       
                       radioButtons("series_type", 
                                    "Data set type",
-                                   choices = list("Singleseries" = 1, 
-                                                  "Multiseries" = 2),
-                                   selected = 2),
+                                   choices = list("Multi series" = 1,
+                                                  "Single series" = 2),
+                                   selected = 1),
                       
                       textInput(inputId = "series_regex", 
-                                label = "Regular expression series number:", 
+                                label = "Single series number regex:", 
                                 value = "(?<=_)\\d*($)", 
                                 width = NULL,
                                 placeholder = "(?<=_)\\d*($)"),
@@ -261,11 +261,11 @@ server <- function(input, output, session) {
       
       single_series = FALSE
       
-      if (series_type == 1) {
+      if (series_type == 2) {
         
         single_series = TRUE
         
-      } else if (series_type == 2) {
+      } else if (series_type == 1) {
         
         single_series = FALSE
         

@@ -7,7 +7,7 @@ The R data processing and plotting is implemented as [Shiny](https://shiny.rstud
 This allows you to read in the output data and execute the data processing using a graphical interface.
 Summary plots are shown in the OrgaMapper Shiny App directly for user convenience. 
 
-<img src="https://github.com/schmiedc/OrgaMapper_Rshiny/blob/main/www/rShinyInterface2.png" alt="Intro" class="inline" width=500/>
+<img src="https://github.com/schmiedc/OrgaMapper_Rshiny/blob/main/www/rShinyInterface2.png" alt="Intro" class="inline" width=800/>
 
 ## Installation
 

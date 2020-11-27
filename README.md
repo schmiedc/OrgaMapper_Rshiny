@@ -13,7 +13,7 @@ Install r and r studio for running the rShiny app:<br/>
 [https://www.r-project.org/](https://www.r-project.org/)<br/>
 [https://rstudio.com/products/rstudio/download/](https://rstudio.com/products/rstudio/download/)<br/>
 
-Then download the contents of the OrgaMapper_Rshiny repository:
+Then download the contents of the OrgaMapper_Rshiny repository:<br/>
 [OrgaMapper Rshiny](https://github.com/schmiedc/OrgaMapper_Rshiny/archive/main.zip)
 
 ## Documentation

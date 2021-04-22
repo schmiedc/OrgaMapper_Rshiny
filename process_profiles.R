@@ -51,13 +51,14 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
       value_measure_mean <- value_measure %>% 
         group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
         summarise(mean_orgaIntensity = mean(orgaIntensity), mean_measureIntensity = mean(measureIntensity))
+        # summarise(mean_orgaIntensity = median(orgaIntensity), mean_measureIntensity = median(measureIntensity))
       
     } else {
       
       value_measure_mean <- value_measure %>% 
         group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
         summarise(mean_orgaIntensity = mean(orgaIntensity))
-      
+        # summarise(mean_orgaIntensity = median(orgaIntensity))
     }
     
     # merge cell measurements with intensity profiles
@@ -118,20 +119,24 @@ grouped_intensity_map <- function(individual_maps, background_subtract) {
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
+        # summarise(orga_mean = median(orgaIntensityBacksub), measure_mean = median(measureIntensityBackSub))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
+        # summarise(orga_mean = median(orgaIntensityBacksub), measure_mean = median(measureIntensityBackSub))
       
     } else {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
+        # summarise(orga_mean = median(mean_orgaIntensity), measure_mean = median(mean_measureIntensity))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
         summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
+        # summarise(orga_mean = median(mean_orgaIntensity), measure_mean = median(mean_measureIntensity))
     }
     
   } else {
@@ -141,20 +146,24 @@ grouped_intensity_map <- function(individual_maps, background_subtract) {
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub))
+        # summarise(orga_mean = median(orgaIntensityBacksub))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub))
+        # summarise(orga_mean = median(orgaIntensityBacksub))
       
     } else {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(mean_orgaIntensity))
+        # summarise(orga_mean = median(mean_orgaIntensity))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
         summarise(orga_mean = mean(mean_orgaIntensity))
+        # summarise(orga_mean = median(mean_orgaIntensity))
       
     }
     

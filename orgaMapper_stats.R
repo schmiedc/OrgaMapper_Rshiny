@@ -1,6 +1,6 @@
 library("openxlsx")
 
-setwd("/home/schmiedc/Desktop/OrgaMapper_Data/size_MTM1KOvsWT/output_test/")
+setwd("/home/schmiedc/FMP_Docs/Projects/OrgaMapper/Publication_orgaMapper/OrgaMapper_Data/size_MTM1KOvsWT/output_test/")
 
 file <- read.xlsx("Analysis_test_cell.xlsx")
 head(file)

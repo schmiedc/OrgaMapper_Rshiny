@@ -1,4 +1,4 @@
-setwd("/data1/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
+setwd("/home/schmiedc/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
 
 packages <- c("shiny", "shinyFiles", "openxlsx", "ggplot2", "gridExtra", "tidyverse", "lazyeval")
 if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
@@ -224,8 +224,6 @@ server <- function(input, output, session) {
 
   observeEvent(input$processData, {
     
-    
-    
     tryCatch({
       
       withProgress(message = 'Progress:', value = 0, {
@@ -235,7 +233,6 @@ server <- function(input, output, session) {
       # directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
       directory <- global$datapath
       directory <- paste0(directory, .Platform$file.sep)
-      
       
       # result_name = "Analysis_test"
       result_name <- input$resultname
@@ -394,8 +391,8 @@ server <- function(input, output, session) {
       write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
                  merge_cell_organelle_result, 
                  sheetName="Sheet1",  
-                 col.names=TRUE, 
-                 row.names=TRUE, 
+                 colNames=TRUE, 
+                 rowNames=TRUE, 
                  append=FALSE, 
                  showNA=TRUE)
       
@@ -444,8 +441,8 @@ server <- function(input, output, session) {
       write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
                  merged_summary_result, 
                  sheetName="Sheet1",  
-                 col.names=TRUE, 
-                 row.names=TRUE, 
+                 colNames=TRUE, 
+                 rowNames=TRUE, 
                  append=FALSE, 
                  showNA=TRUE)
       
@@ -512,8 +509,8 @@ server <- function(input, output, session) {
         write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
                    intensity_ratio_results, 
                    sheetName="Sheet1",  
-                   col.names=TRUE, 
-                   row.names=TRUE, 
+                   colNames=TRUE, 
+                   rowNames=TRUE, 
                    append=FALSE, 
                    showNA=TRUE)
         
@@ -534,8 +531,8 @@ server <- function(input, output, session) {
         write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
                    intensity_map_result, 
                    sheetName="Sheet1",  
-                   col.names=TRUE, 
-                   row.names=TRUE, 
+                   colNames=TRUE, 
+                   rowNames=TRUE, 
                    append=FALSE, 
                    showNA=TRUE)
         

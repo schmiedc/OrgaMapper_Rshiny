@@ -86,7 +86,7 @@ create_summary_table <- function(full_table,
   
   summary <- full_table %>% 
     group_by(identifier, series, cell) %>% 
-    summarise(across(detectionDistanceRaw:detectionDistanceNormalized, mean, na.rm =TRUE ), .groups = 'drop') %>% 
+    summarise(across(detectionDistanceRaw:detectionDistanceNormalized, ~ mean(.x, na.rm =TRUE) ), .groups = 'drop') %>% 
     rename_at(vars(-identifier, -series, -cell),function(x) paste0(x,".mean"))
   
   merge <- merge(cell_data,

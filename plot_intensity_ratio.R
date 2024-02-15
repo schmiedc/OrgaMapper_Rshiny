@@ -83,7 +83,7 @@ plot_intensity_ration <- function(dataFrame, name, directory) {
     ylab("I perinculear / I peripheral") +
     geom_boxplot(outlier.size = 0, outlier.shape = NA, na.rm=TRUE) + 
     stat_boxplot(geom = 'errorbar', width = 0.2, na.rm=TRUE) +
-    scale_y_continuous(limits = quantile(dataFrame$intensity_ratio, c(0.1, 0.9))) +
+    # scale_y_continuous(limits = quantile(dataFrame$intensity_ratio, c(0.1, 0.9))) +
     geom_jitter(width = 0.1, na.rm=TRUE) + 
     boxplot_theme()
   

@@ -1,8 +1,11 @@
 setwd("/home/schmiedc/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
 
 packages <- c("shiny", "shinyFiles", "openxlsx", "ggplot2", "gridExtra", "tidyverse", "lazyeval")
+
 if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
+  
   install.packages(setdiff(packages, rownames(installed.packages())))  
+  
 }
 
 library(gridExtra)
@@ -30,9 +33,7 @@ source("plot_intensity_ratio.R")
 #
 #         BUGS:
 #        NOTES: 
-# DEPENDENCIES: 
-#               
-#               shiny: install.packages("shiny")
+# DEPENDENCIES: shiny: install.packages("shiny")
 #               shinyFiles: install.packages("shinyFiles")
 #               openxlsx: install.packages("openxlsx")
 #               ggplot2: install.packages("ggplot2")
@@ -40,9 +41,9 @@ source("plot_intensity_ratio.R")
 #               tidyverse: install.packages("tidyverse")
 #               lazyeval: install.packages("lazyeval")
 #
-#      VERSION: 0.4.1
+#      VERSION: 1.5.0
 #      CREATED: 2020-10-01
-#     REVISION: 2020-11-20
+#     REVISION: 2024-03-28
 #
 # ============================================================================
 ui <- fluidPage( 
@@ -341,52 +342,35 @@ server <- function(input, output, session) {
       
       # ------------------------------------------------------------------------------
       # renaming for organelle result tables
-      if (cell_column == 10 && orga_column == 10) {
-        
+      detection_lookup <- c(cell_area = "cellArea",
+                       numberOfDetections = "numberDetections",
+                       orga_intensity = "orgaMeanIntensity",
+                       orga_background = "orgaMeanBackground",
+                       x_nucleus_center_mass = "nucleusCenterMassX",
+                       y_nucleus_center_mass = "nucleusCenterMassY",
+                       measure_intensity = "measureMeanIntensity",
+                       measure_background = "measureMeanBackground",
+                       orga_intensity_backsub = "orgaMeanIntensityBacksub",
+                       measure_intensity_backsub = "measureMeanIntensityBacksub",
+                       x_detection = "xDetection",
+                       y_detection = "yDetection",
+                       orga_distance_pixel = "detectionDistanceRaw",
+                       orga_distance_calibrated = "detectionDistanceCalibrated",
+                       orga_detection_peak = "orgaDetectionPeak",
+                       measure_detection_peak = "measureDetectionPeak",
+                       orga_detection_peak_backsub = "orgaDetectionPeakBacksub",
+                       measure_detection_peak_backsub = "measureDetectionPeakBacksub",
+                       orga_distance_normalized = "detectionDistanceNormalized")
+      
         merge_cell_organelle_result <- merge_cell_organelle %>%
           rename(
-            cell_area = cellArea,
-            numberOfDetections = numberDetections,
-            orga_intensity = orgaMeanIntensity,
-            orga_background = orgaMeanBackground,
-            measure_intensity = measureMeanIntensity,
-            measure_background = measureMeanBackground,
-            orga_intensity_backsub = orgaMeanIntensityBacksub,
-            measure_intensity_backsub = measureMeanIntensityBacksub,
-            x_detection = xDetection,
-            y_detection = yDetection,
-            orga_distance_pixel = detectionDistanceRaw,
-            orga_distance_calibrated = detectionDistanceCalibrated,
-            orga_detection_peak = orgaDetectionPeak,
-            measure_detection_peak = measureDetectionPeak,
-            orga_detection_peak_backsub = orgaDetectionPeakBacksub,
-            measure_detection_peak_backsub = measureDetectionPeakBacksub,
-            orga_distance_normalized = detectionDistanceNormalized
+            any_of(
+              
+              detection_lookup
+              
+            )
           )
-        
-      } else {
-        
-        merge_cell_organelle_result <- merge_cell_organelle %>%
-          rename(
-            cell_area = cellArea,
-            numberOfDetections = numberDetections,
-            orga_intensity = orgaMeanIntensity,
-            orga_background = orgaMeanBackground,
-            orga_intensity_backsub = orgaMeanIntensityBacksub,
-            x_detection = xDetection,
-            y_detection = yDetection,
-            orga_distance_pixel = detectionDistanceRaw,
-            orga_distance_calibrated = detectionDistanceCalibrated,
-            orga_detection_peak = orgaDetectionPeak,
-            orga_detection_peak_backsub = orgaDetectionPeakBacksub,
-            orga_distance_normalized = detectionDistanceNormalized
-          )
-        
-      }
-      
-      head(merge_cell_organelle_result)
-      
-      # ------------------------------------------------------------------------------
+
       # save processed data
       write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
                  merge_cell_organelle_result, 
@@ -397,46 +381,31 @@ server <- function(input, output, session) {
                  showNA=TRUE)
       
       # ------------------------------------------------------------------------------
-      head(merged_summary)
+      # renaming for cell results
+      cell_lookup <- c(cell_area = "cellArea",
+                       orga_numberOfDetections = "numberDetections",
+                       orga_intensity = "orgaMeanIntensity",
+                       orga_background = "orgaMeanBackground",
+                       measure_intensity = "measureMeanIntensity",
+                       measure_background = "measureMeanBackground",
+                       x_nucleus_center_mass = "nucleusCenterMassX",
+                       y_nucleus_center_mass = "nucleusCenterMassY",
+                       orga_intensity_backsub = "orgaMeanIntensityBacksub",
+                       measure_intensity_backsub = "measureMeanIntensityBacksub",
+                       orga_meanDistance_pixel = "detectionDistanceRaw.mean",
+                       orga_meanDistance_calibrated = "detectionDistanceCalibrated.mean",
+                       measure_intensityOnDetection = "orgaDetectionPeak.mean",
+                       orga_intensityOnDetection_backsub = "orgaDetectionPeakBacksub.mean",
+                       measure_intensityOnDetection_backsub = "measureDetectionPeakBacksub.mean",
+                       orga_meanDistance_normalized = "detectionDistanceNormalized.mean")
       
-      if (cell_column == 10 && orga_column == 10) {
-        
-        merged_summary_result <- merged_summary %>%
-          rename(
-            cell_area = cellArea,
-            orga_numberOfDetections = numberDetections,
-            orga_intensity = orgaMeanIntensity,
-            orga_background = orgaMeanBackground,
-            measure_intensity = measureMeanIntensity,
-            measure_background = measureMeanBackground,
-            orga_intensity_backsub = orgaMeanIntensityBacksub,
-            measure_intensity_backsub = measureMeanIntensityBacksub,
-            orga_meanDistance_pixel = detectionDistanceRaw.mean,
-            orga_meanDistance_calibrated = detectionDistanceCalibrated.mean,
-            orga_intensityOnDetection = orgaDetectionPeak.mean,
-            measure_intensityOnDetection = measureDetectionPeak.mean,
-            orga_intensityOnDetection_backsub = orgaDetectionPeakBacksub.mean,
-            measure_intensityOnDetection_backsub = measureDetectionPeakBacksub.mean,
-            orga_meanDistance_normalized = detectionDistanceNormalized.mean
+      merged_summary_result <- merged_summary %>% 
+        rename(
+          any_of(
+            cell_lookup
           )
-        
-      } else {
-        
-        merged_summary_result <- merged_summary %>%
-          rename(
-            cell_area = cellArea,
-            orga_numberOfDetections = numberDetections,
-            orga_intensity = orgaMeanIntensity,
-            orga_background = orgaMeanBackground,
-            orga_intensity_backsub = orgaMeanIntensityBacksub,
-            orga_meanDistance_pixel = detectionDistanceRaw.mean,
-            orga_meanDistance_calibrated = detectionDistanceCalibrated.mean,
-            orga_intensityOnDetection = orgaDetectionPeak.mean,
-            orga_intensityOnDetection_backsub = orgaDetectionPeakBacksub.mean,
-            orga_meanDistance_normalized = detectionDistanceNormalized.mean
           )
-        
-      }
+      
       # merged_summary
       write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
                  merged_summary_result, 
@@ -455,8 +424,6 @@ server <- function(input, output, session) {
                                            cell_column,
                                            orga_column,
                                            plot_background_subtract)
-      
-      
       
       detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                      merged_summary,
@@ -556,6 +523,7 @@ server <- function(input, output, session) {
           
         })
         
+        # TODO: Fails due to new column length need better way
         if (cell_column == 10 && orga_column == 10) {
           
           measure_profile <- plot_intensity_map(intensity_map_result, 

@@ -179,6 +179,7 @@ plot_intensity_map <- function(dataframe_calib,
     max_value_profiles = max(data_per_name$binned_normalized, na.rm = TRUE)
     data_per_name$orga_peak_norm <- sapply(data_per_name$binned_normalized, function(x){x /  max_value_profiles})
     
+    # TODO: problematic setting as it depends on the number of columns
     if ( col_intensity_map == 6) {
       
       max_value_profiles = max(data_per_name$measure_peak_norm, na.rm = TRUE)

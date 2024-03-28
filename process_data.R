@@ -27,14 +27,14 @@ read_collected_files <- function(inputdir,
 process_cell_measurements <- function(data, 
                                       lower, 
                                       upper, 
-                                      column_cell_table, 
-                                      column_orga_table,
+                                      check_measureChannelCell, 
+                                      check_measureChannelOrganelle,
                                       filter) {
   
+  # filter data based on ferets diatmeter
   if (filter) {
     
-    data_filter <- subset(data, 
-                          ferets >= lower & ferets <= upper)
+    data_filter <- subset(data, ferets >= lower & ferets <= upper)
     
   } else {
     
@@ -46,7 +46,7 @@ process_cell_measurements <- function(data,
   data_filter$orgaMeanIntensityBacksub <- 
     data_filter$orgaMeanIntensity - data_filter$orgaMeanBackground
   
-  if (column_cell_table == 10 && column_orga_table == 10) {
+  if (check_measureChannelCell && check_measureChannelOrganelle) {
     
     data_filter$measureMeanIntensityBacksub <- 
       data_filter$measureMeanIntensity - data_filter$measureMeanBackground
@@ -59,8 +59,8 @@ process_cell_measurements <- function(data,
 
 process_orga_measurements <- function(cell_data,
                                       orga_data,
-                                      column_cell_table,
-                                      column_orga_table) {
+                                      check_measureChannelCell,
+                                      check_measureChannelOrganelle) {
   
   merge <- merge(cell_data,
                  orga_data,
@@ -69,7 +69,7 @@ process_orga_measurements <- function(cell_data,
   # background subtraction for detection intensity
   merge$orgaDetectionPeakBacksub <- merge$orgaDetectionPeak - merge$orgaMeanBackground
   
-  if (column_cell_table == 10 && column_orga_table == 10) {
+  if (check_measureChannelCell && check_measureChannelOrganelle) {
     
     merge$measureDetectionPeakBacksub <- merge$measureDetectionPeak - merge$measureMeanBackground
     

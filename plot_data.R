@@ -98,8 +98,8 @@ lineplot_theme <- function() {
 
 plot_cell_measurements <- function(cell_data_table,
                                    plots,
-                                   cell_column,
-                                   orga_column,
+                                   check_measureChannelCell,
+                                   check_measureChannelOrganelle,
                                    background_subtract) {
   
   # plots area, number of detections and mean value
@@ -168,7 +168,8 @@ plot_cell_measurements <- function(cell_data_table,
   measure_intensity_cell = ""
   measure_intensity_peak = ""
   
-  if (cell_column == 10 && orga_column == 10) {
+  # TODO: this is broken because of new columns
+  if (check_measureChannelCell && check_measureChannelOrganelle) {
     
     if (background_subtract) {
       
@@ -209,8 +210,8 @@ plot_cell_measurements <- function(cell_data_table,
 plot_detection_measurements <- function(full_data_table,
                                         summary_table,
                                         plots,
-                                        column_cell_table,
-                                        column_orga_table,
+                                        check_measureChannelCell,
+                                        check_measureChannelOrganelle,
                                         cal_distance_nucleus,
                                         norm_distance_nucleus,
                                         background_subtract) {
@@ -344,8 +345,6 @@ plot_detection_measurements <- function(full_data_table,
   
   plot_list_detection[[length(plot_list_detection)  + 1]] <- plot_density
   
-  
-  
   # ------------------------------------------------------------------------------
   # plot distance and detection intensity
   organelle_intensity_peak = ""
@@ -384,7 +383,6 @@ plot_detection_measurements <- function(full_data_table,
     pivot_longer(cols=detectionDistanceRaw.mean:detectionDistanceNormalized.mean, 
                  values_to = "measurement" )
   
-  
   for (index in seq_along(measure2)) {
     
     dataSubset <- subset(summary_long, summary_long$name==measure2[index])
@@ -411,8 +409,11 @@ plot_detection_measurements <- function(full_data_table,
   # ----------------------------------------------------------------------------
   # plot measure channel
   measure_intensity_peak = ""
-  
-  if (column_cell_table == 10 && column_orga_table == 10) {
+  measureChannel = "measureDetectionPeak.mean" %in% colnames(summary_table)
+  measureChannelBacksub = "measureDetectionPeakBacksub.mean" %in% colnames(summary_table)
+
+  # TODO: this is broken because of new columns
+  if (check_measureChannelCell &&  check_measureChannelOrganelle) {
     
     if (background_subtract) {
       

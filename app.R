@@ -231,8 +231,8 @@ server <- function(input, output, session) {
       progress = 8
       
       # path to folder where the directories for the measurements are
-      # directory = "/home/schmiedc/Desktop/Test/test_nd2/2020-10-14_output/"
-      directory <- global$datapath
+      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
+      # directory <- global$datapath
       directory <- paste0(directory, .Platform$file.sep)
       
       # result_name = "Analysis_test"
@@ -318,20 +318,21 @@ server <- function(input, output, session) {
                                            single_series, 
                                            series_regex)
       
-      cell_column <- ncol(cell_measure)
-      orga_column <- ncol(organelle_distance)
+      # Checks if there were measurements in measurement channel
+      measureChannelCell = "measureMeanIntensity" %in% colnames(cell_measure)
+      measureChannelOrganelle = "measureDetectionPeak" %in% colnames(organelle_distance)
       
       cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                        feret_lower, 
                                                        feret_upper,
-                                                       cell_column,
-                                                       orga_column,
+                                                       measureChannelCell,
+                                                       measureChannelOrganelle,
                                                        feret_filter)
       
       merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
                                                         organelle_distance,
-                                                        cell_column,
-                                                        orga_column)
+                                                        measureChannelCell,
+                                                        measureChannelOrganelle)
       
       merged_summary <- create_summary_table(merge_cell_organelle,
                                              cell_measure_filter)
@@ -421,15 +422,15 @@ server <- function(input, output, session) {
       
       cell_plots <- plot_cell_measurements(cell_measure_filter,
                                            plots_distance,
-                                           cell_column,
-                                           orga_column,
+                                           measureChannelCell,
+                                           measureChannelOrganelle,
                                            plot_background_subtract)
       
       detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                      merged_summary,
                                                      plots_distance,
-                                                     cell_column,
-                                                     orga_column,
+                                                     measureChannelCell,
+                                                     measureChannelOrganelle,
                                                      cal_distance_nucleus,
                                                      norm_distance_nucleus,
                                                      plot_background_subtract)
@@ -524,7 +525,7 @@ server <- function(input, output, session) {
         })
         
         # TODO: Fails due to new column length need better way
-        if (cell_column == 10 && orga_column == 10) {
+        if (measureChannelCell && measureChannelOrganelle) {
           
           measure_profile <- plot_intensity_map(intensity_map_result, 
                                               intensity_map_result_norm, 

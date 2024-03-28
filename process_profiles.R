@@ -2,10 +2,9 @@
 # opening files that contain intensity information
 collect_individual_profiles_new <- function(inputdir, regular_expression, series, cell_measure_data) {
   
+  # TODO: problematic setting as it depends on the number of columns
   cell_col = ncol(cell_measure_data)
-  
-  
-  
+
   name = "intensityDistance.csv"
   
   print("Retrieving individual files")
@@ -45,7 +44,7 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
       
     }
     
-    # TODO check if this works
+    # TODO: problematic setting as it depends on the number of columns
     if (cell_col == 12 && value_col == 9) {
       
       value_measure_mean <- value_measure %>% 
@@ -72,6 +71,7 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
     # background subtraction for detection intensity
     merge_table$orgaIntensityBacksub <- merge_table$mean_orgaIntensity - merge_table$orgaMeanBackground
     
+    # TODO: problematic setting as it depends on the number of columns
     if (cell_col == 12 && value_col == 9) {
       
       merge_table$measureIntensityBackSub <- merge_table$mean_measureIntensity - merge_table$measureMeanBackground

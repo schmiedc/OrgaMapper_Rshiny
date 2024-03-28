@@ -1,6 +1,10 @@
 
 # opening files that contain intensity information
-collect_individual_profiles_new <- function(inputdir, regular_expression, series, cell_measure_data) {
+collect_individual_profiles_new <- function(inputdir, 
+                                            regular_expression, 
+                                            series, 
+                                            cell_measure_data,
+                                            check_measureChannelCell) {
   
   # TODO: problematic setting as it depends on the number of columns
   cell_col = ncol(cell_measure_data)
@@ -28,8 +32,10 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
     
     # check if intDistance.csv is empty if true skip
     if(nrow(value_measure) == 0) {
+      
       print(paste("Skipping file: ", name))
       next
+      
     }
     
     # TODO needs to default to something that is sensible if invalid
@@ -44,20 +50,29 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
       
     }
     
-    # TODO: problematic setting as it depends on the number of columns
-    if (cell_col == 12 && value_col == 9) {
+    # check_measureChannelIntensity = "measureIntensity" %in% colnames(value_measure)
+    
+    if (check_measureChannelCell) {
+      
+      print("check_measureChannelCell: Measurement in other channel identified")
+      
+    }
+    
+    
+    # if measurement in other channel
+    if (check_measureChannelCell) {
       
       value_measure_mean <- value_measure %>% 
         group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
-        summarise(mean_orgaIntensity = mean(orgaIntensity), mean_measureIntensity = mean(measureIntensity))
-        # summarise(mean_orgaIntensity = median(orgaIntensity), mean_measureIntensity = median(measureIntensity))
+        summarise(mean_orgaIntensity = mean(orgaIntensity), 
+                  mean_measureIntensity = mean(measureIntensity))
       
     } else {
       
       value_measure_mean <- value_measure %>% 
         group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
         summarise(mean_orgaIntensity = mean(orgaIntensity))
-        # summarise(mean_orgaIntensity = median(orgaIntensity))
+      
     }
     
     # merge cell measurements with intensity profiles
@@ -71,8 +86,8 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
     # background subtraction for detection intensity
     merge_table$orgaIntensityBacksub <- merge_table$mean_orgaIntensity - merge_table$orgaMeanBackground
     
-    # TODO: problematic setting as it depends on the number of columns
-    if (cell_col == 12 && value_col == 9) {
+    # if measurement in other channel
+    if (check_measureChannelCell) {
       
       merge_table$measureIntensityBackSub <- merge_table$mean_measureIntensity - merge_table$measureMeanBackground
       
@@ -84,10 +99,15 @@ collect_individual_profiles_new <- function(inputdir, regular_expression, series
   
   value_list_coll <- do.call("rbind", value_list)
   gc()
+  
   return(value_list_coll)
 }
 
-bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
+bin_distance_values_new <- function(bin, 
+                                    value, 
+                                    variable_name, 
+                                    width, 
+                                    limit) {
   
   output_apply <- tapply(value, 
                          cut(bin, seq(0, limit, by=width)), 
@@ -108,35 +128,38 @@ bin_distance_values_new <- function(bin, value, variable_name, width, limit) {
 }
 
 # create different grouped means
-grouped_intensity_map <- function(individual_maps, background_subtract) {
+grouped_intensity_map <- function(individual_maps, 
+                                  background_subtract,
+                                  check_measureChannelCell,
+                                  check_measureChannelIntensity) {
   
   intensity_maps_col = ncol(individual_maps)
   
-  if (intensity_maps_col == 18) {
+  if (check_measureChannelCell && check_measureChannelIntensity) {
     
     if (background_subtract) {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
-        summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
-        # summarise(orga_mean = median(orgaIntensityBacksub), measure_mean = median(measureIntensityBackSub))
+        summarise(orga_mean = mean(orgaIntensityBacksub), 
+                  measure_mean = mean(measureIntensityBackSub))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
-        summarise(orga_mean = mean(orgaIntensityBacksub), measure_mean = mean(measureIntensityBackSub))
-        # summarise(orga_mean = median(orgaIntensityBacksub), measure_mean = median(measureIntensityBackSub))
+        summarise(orga_mean = mean(orgaIntensityBacksub), 
+                  measure_mean = mean(measureIntensityBackSub))
       
     } else {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
-        summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
-        # summarise(orga_mean = median(mean_orgaIntensity), measure_mean = median(mean_measureIntensity))
+        summarise(orga_mean = mean(mean_orgaIntensity), 
+                  measure_mean = mean(mean_measureIntensity))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
-        summarise(orga_mean = mean(mean_orgaIntensity), measure_mean = mean(mean_measureIntensity))
-        # summarise(orga_mean = median(mean_orgaIntensity), measure_mean = median(mean_measureIntensity))
+        summarise(orga_mean = mean(mean_orgaIntensity), 
+                  measure_mean = mean(mean_measureIntensity))
     }
     
   } else {
@@ -146,24 +169,20 @@ grouped_intensity_map <- function(individual_maps, background_subtract) {
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub))
-        # summarise(orga_mean = median(orgaIntensityBacksub))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
         summarise(orga_mean = mean(orgaIntensityBacksub))
-        # summarise(orga_mean = median(orgaIntensityBacksub))
       
     } else {
       
       value_list_treat <- individual_maps %>% 
         group_by(identifier,intensityDistanceCalibrated) %>% 
         summarise(orga_mean = mean(mean_orgaIntensity))
-        # summarise(orga_mean = median(mean_orgaIntensity))
       
       value_list_treat_norm <- individual_maps %>% 
         group_by(identifier, intensityDistanceNormalized) %>% 
         summarise(orga_mean = mean(mean_orgaIntensity))
-        # summarise(orga_mean = median(mean_orgaIntensity))
       
     }
     

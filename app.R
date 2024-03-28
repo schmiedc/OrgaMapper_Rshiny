@@ -231,7 +231,8 @@ server <- function(input, output, session) {
       progress = 8
       
       # path to folder where the directories for the measurements are
-      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
+      # directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
+      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single/"
       # directory <- global$datapath
       directory <- paste0(directory, .Platform$file.sep)
       
@@ -454,20 +455,32 @@ server <- function(input, output, session) {
         
       })
       
+      # ------------------------------------------------------------------------------
       if (intensity_profiles) {
         
-        # ------------------------------------------------------------------------------
         # collect individual files
         print("Computing individual intensity maps")
         individual_intensity_maps <- collect_individual_profiles_new(directory, 
                                                                      series_regex, 
                                                                      single_series, 
-                                                                     cell_measure_filter)
+                                                                     cell_measure_filter,
+                                                                     measureChannelCell)
         rownames(individual_intensity_maps) <- c()
         head(individual_intensity_maps)
         
-        # create intensity ratio data and plots
+        measureChannelIntensity = "mean_measureIntensity" %in% colnames(individual_intensity_maps)
         
+        if (measureChannelIntensity) {
+          
+          print("Measurement in other channel identified")
+          
+        } else {
+          
+          print("No measurement channel detected")
+          
+        }
+        
+        # create intensity ratio data and plots
         print("Computing and plotting intensity ratio")
         intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 
                                                             10, 
@@ -487,7 +500,10 @@ server <- function(input, output, session) {
         # group intensity maps
         print("Computing mean of individual intensity maps")
         incProgress(1/progress, detail = paste("Plotting intensity ratio", 5))
-        value_lists <- grouped_intensity_map(individual_intensity_maps, plot_background_subtract)
+        value_lists <- grouped_intensity_map(individual_intensity_maps, 
+                                             plot_background_subtract,
+                                             measureChannelCell,
+                                             measureChannelIntensity)
         
         intensity_map_result <- value_lists$raw
         intensity_map_result_norm <- value_lists$norm
@@ -524,8 +540,9 @@ server <- function(input, output, session) {
           
         })
         
-        # TODO: Fails due to new column length need better way
-        if (measureChannelCell && measureChannelOrganelle) {
+        if (measureChannelCell && measureChannelIntensity) {
+          
+          print("Plotting intensity maps for measure channel")
           
           measure_profile <- plot_intensity_map(intensity_map_result, 
                                               intensity_map_result_norm, 

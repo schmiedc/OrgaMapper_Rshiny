@@ -232,7 +232,7 @@ server <- function(input, output, session) {
       
       # path to folder where the directories for the measurements are
       # directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
-      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single/"
+      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single_measure/"
       # directory <- global$datapath
       directory <- paste0(directory, .Platform$file.sep)
       
@@ -290,7 +290,7 @@ server <- function(input, output, session) {
       # bin_width = 2
       bin_width <- input$bin_width
       
-      # ==============================================================================
+      # ========================================================================
       # where to save the data
       out_dir =  directory
       result_path <- file.path(out_dir, result_name, fsep = .Platform$file.sep)
@@ -303,21 +303,38 @@ server <- function(input, output, session) {
       plots_intensity <- file.path(out_dir, "plot_intensity_map", fsep = .Platform$file.sep)
       dir.create(plots_intensity, showWarnings = FALSE)
       
-      # ==============================================================================
+      # ========================================================================
+      # Data processing 
+      # ========================================================================
       incProgress(1/progress, detail = paste("Processing distance data. Step: ", 1))
       
       name_distance = "organelleDistance.csv"
       name_cell_measure = "cellMeasurements.csv"
+      
+      cell_measure <- read_collected_files(directory, 
+                                           name_cell_measure, 
+                                           single_series, 
+                                           series_regex)
       
       organelle_distance <- read_collected_files(directory, 
                                                  name_distance, 
                                                  single_series, 
                                                  series_regex)
       
-      cell_measure <- read_collected_files(directory, 
-                                           name_cell_measure, 
-                                           single_series, 
-                                           series_regex)
+      # check if measurements from membrane exist
+      name_distance_membrane = "organelleDistanceFromMembrane.csv"
+      
+      if (file.exists(paste0(directory, name_distance_membrane))) {
+        
+        cat(file=stderr(), "Distance from membrane exists")
+        # TODO: add organelle distance from membrane need different headers
+    
+        
+      } else {
+        
+        cat(file=stderr(), "Distance from membrane does not exist")
+        
+      }
       
       # Checks if there were measurements in measurement channel
       measureChannelCell = "measureMeanIntensity" %in% colnames(cell_measure)
@@ -338,11 +355,14 @@ server <- function(input, output, session) {
       merged_summary <- create_summary_table(merge_cell_organelle,
                                              cell_measure_filter)
       
-      # ------------------------------------------------------------------------------
+      # TODO: add organelle distance from membrane
+      
+      # ========================================================================
       # save processed data
+      # ========================================================================
       incProgress(1/progress, detail = paste("Saving distance results. Step: ", 2))
       
-      # ------------------------------------------------------------------------------
+      # ------------------------------------------------------------------------
       # renaming for organelle result tables
       detection_lookup <- c(cell_area = "cellArea",
                        numberOfDetections = "numberDetections",
@@ -382,7 +402,7 @@ server <- function(input, output, session) {
                  append=FALSE, 
                  showNA=TRUE)
       
-      # ------------------------------------------------------------------------------
+      # ------------------------------------------------------------------------
       # renaming for cell results
       cell_lookup <- c(cell_area = "cellArea",
                        orga_numberOfDetections = "numberDetections",
@@ -417,8 +437,9 @@ server <- function(input, output, session) {
                  append=FALSE, 
                  showNA=TRUE)
       
-      # ------------------------------------------------------------------------------
-      # plot data
+      # ========================================================================
+      # plot distance data
+      # ========================================================================
       incProgress(1/progress, detail = paste("Plotting distance maps. Step: ", 3))
       
       cell_plots <- plot_cell_measurements(cell_measure_filter,
@@ -436,8 +457,10 @@ server <- function(input, output, session) {
                                                      norm_distance_nucleus,
                                                      plot_background_subtract)
       
-      # ------------------------------------------------------------------------------
-      incProgress(1/progress, detail = paste("Processing intensity data. Step: ", 4))
+      # TODO: add organelle distance from membrane
+      
+      # ------------------------------------------------------------------------
+      incProgress(1/progress, detail = paste("Display plots. Step: ", 4))
       
       output$cell_plots <- renderPlot({
         
@@ -454,8 +477,12 @@ server <- function(input, output, session) {
         print(orga)
         
       })
+
+      # ========================================================================
+      # Process intensity profiles 
+      # ========================================================================
+      # TODO: add intensity profiles from membrane
       
-      # ------------------------------------------------------------------------------
       if (intensity_profiles) {
         
         # collect individual files
@@ -509,7 +536,8 @@ server <- function(input, output, session) {
         intensity_map_result_norm <- value_lists$norm
         
         head(intensity_map_result)
-        # ------------------------------------------------------------------------------
+        
+        # ----------------------------------------------------------------------
         print("Saving raw intensity maps")
         incProgress(1/progress, detail = paste("Saving intensity data", 6))
         write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
@@ -520,7 +548,7 @@ server <- function(input, output, session) {
                    append=FALSE, 
                    showNA=TRUE)
         
-        # ------------------------------------------------------------------------------
+        # ----------------------------------------------------------------------
         print("Plotting intensity maps")
         incProgress(1/progress, detail = paste("Plotting intensity maps", 7))
         
@@ -564,6 +592,7 @@ server <- function(input, output, session) {
         
       }
       
+      # ========================================================================
       incProgress(1/progress, detail = paste("Done", 8))
       }) # end of progess
       

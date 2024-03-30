@@ -375,10 +375,10 @@ server <- function(input, output, session) {
                           "detectionDistanceCalibrated",
                           "detectionDistanceNormalized")
         
-        merge_cell_organelle_membrane <- merge_cell_organelle_membrane[, keep_columns_detection_membrane, drop = FALSE]
+        merge_cell_organelle_membrane_2 <- merge_cell_organelle_membrane[, keep_columns_detection_membrane, drop = FALSE]
         
         # rename the column headers for membrane distance
-        merge_cell_organelle_membrane <- merge_cell_organelle_membrane %>% rename(
+        merge_cell_organelle_membrane_2 <- merge_cell_organelle_membrane_2 %>% rename(
           orga_meanDistance_membrane_pixel = detectionDistanceRaw,
           orga_meanDistance_membrane_calibrated = detectionDistanceCalibrated,
           orga_meanDistance_membrane_normalized = detectionDistanceNormalized)
@@ -391,10 +391,10 @@ server <- function(input, output, session) {
                                              "detectionDistanceCalibrated.mean",
                                              "detectionDistanceNormalized.mean")
         
-        merged_summary_membrane <- merged_summary_membrane[, keep_columns_detection_summary, drop = FALSE]
+        merged_summary_membrane_2 <- merged_summary_membrane[, keep_columns_detection_summary, drop = FALSE]
         
         # rename the column headers for membrane distance
-        merged_summary_membrane <- merged_summary_membrane %>% rename(
+        merged_summary_membrane_2 <- merged_summary_membrane_2 %>% rename(
           orga_meanDistance_membrane_pixel = detectionDistanceRaw.mean,
           orga_meanDistance_membrane_calibrated = detectionDistanceCalibrated.mean,
           orga_meanDistance_membrane_normalized = detectionDistanceNormalized.mean)
@@ -402,13 +402,13 @@ server <- function(input, output, session) {
         
         # merge into table that contain all detections
         merge_cell_organelle <- merge(merge_cell_organelle,
-                                      merge_cell_organelle_membrane,
+                                      merge_cell_organelle_membrane_2,
                                       by = c("identifier", "series", "cell", "detection"))
         
-        # merge into table that contain all detections
+        # merge into table that contain summaries
         merged_summary <- merge(merged_summary,
-                                      merged_summary_membrane,
-                                      by = c("identifier", "series", "cell"))
+                                merged_summary_membrane_2,
+                                by = c("identifier", "series", "cell"))
         
       } else {
         

@@ -321,20 +321,6 @@ server <- function(input, output, session) {
                                                  single_series, 
                                                  series_regex)
       
-      # check if measurements from membrane exist
-      name_distance_membrane = "organelleDistanceFromMembrane.csv"
-      
-      if (file.exists(paste0(directory, name_distance_membrane))) {
-        
-        cat(file=stderr(), "Distance from membrane exists")
-        # TODO: add organelle distance from membrane need different headers
-    
-        
-      } else {
-        
-        cat(file=stderr(), "Distance from membrane does not exist")
-        
-      }
       
       # Checks if there were measurements in measurement channel
       measureChannelCell = "measureMeanIntensity" %in% colnames(cell_measure)
@@ -355,7 +341,80 @@ server <- function(input, output, session) {
       merged_summary <- create_summary_table(merge_cell_organelle,
                                              cell_measure_filter)
       
-      # TODO: add organelle distance from membrane
+      
+      # ------------------------------------------------------------------------
+      # check if measurements from membrane exist
+      name_distance_membrane = "organelleDistanceFromMembrane.csv"
+      
+      distance_membrane_file_exists = file.exists(paste0(directory, name_distance_membrane))
+      
+      if (distance_membrane_file_exists) {
+        
+        cat(file=stderr(), "Distance from membrane exists")
+
+        # get files for organelle distance from membrane
+        organelle_distance_membrane <- read_collected_files(directory,
+                                                            name_distance_membrane,
+                                                            single_series,
+                                                            series_regex)
+        
+        merge_cell_organelle_membrane <- process_orga_measurements(cell_measure_filter,
+                                                          organelle_distance_membrane,
+                                                          FALSE,
+                                                          FALSE)
+        
+        merged_summary_membrane <- create_summary_table(merge_cell_organelle_membrane,
+                                               cell_measure_filter)
+        
+        # filter out redundant columns
+        keep_columns_detection_membrane <- c("identifier", 
+                          "series", 
+                          "cell", 
+                          "detection", 
+                          "detectionDistanceRaw", 
+                          "detectionDistanceCalibrated",
+                          "detectionDistanceNormalized")
+        
+        merge_cell_organelle_membrane <- merge_cell_organelle_membrane[, keep_columns_detection_membrane, drop = FALSE]
+        
+        # rename the column headers for membrane distance
+        merge_cell_organelle_membrane <- merge_cell_organelle_membrane %>% rename(
+          orga_meanDistance_membrane_pixel = detectionDistanceRaw,
+          orga_meanDistance_membrane_calibrated = detectionDistanceCalibrated,
+          orga_meanDistance_membrane_normalized = detectionDistanceNormalized)
+        
+        # filter out redundant columns
+        keep_columns_detection_summary <- c("identifier", 
+                                             "series", 
+                                             "cell",
+                                             "detectionDistanceRaw.mean", 
+                                             "detectionDistanceCalibrated.mean",
+                                             "detectionDistanceNormalized.mean")
+        
+        merged_summary_membrane <- merged_summary_membrane[, keep_columns_detection_summary, drop = FALSE]
+        
+        # rename the column headers for membrane distance
+        merged_summary_membrane <- merged_summary_membrane %>% rename(
+          orga_meanDistance_membrane_pixel = detectionDistanceRaw.mean,
+          orga_meanDistance_membrane_calibrated = detectionDistanceCalibrated.mean,
+          orga_meanDistance_membrane_normalized = detectionDistanceNormalized.mean)
+        
+        
+        # merge into table that contain all detections
+        merge_cell_organelle <- merge(merge_cell_organelle,
+                                      merge_cell_organelle_membrane,
+                                      by = c("identifier", "series", "cell", "detection"))
+        
+        # merge into table that contain all detections
+        merged_summary <- merge(merged_summary,
+                                      merged_summary_membrane,
+                                      by = c("identifier", "series", "cell"))
+        
+      } else {
+        
+        cat(file=stderr(), "Distance from membrane does not exist")
+     
+      }
       
       # ========================================================================
       # save processed data
@@ -376,13 +435,13 @@ server <- function(input, output, session) {
                        measure_intensity_backsub = "measureMeanIntensityBacksub",
                        x_detection = "xDetection",
                        y_detection = "yDetection",
-                       orga_distance_pixel = "detectionDistanceRaw",
-                       orga_distance_calibrated = "detectionDistanceCalibrated",
+                       orga_distance_nucleus_pixel = "detectionDistanceRaw",
+                       orga_distance_nucleus_calibrated = "detectionDistanceCalibrated",
                        orga_detection_peak = "orgaDetectionPeak",
                        measure_detection_peak = "measureDetectionPeak",
                        orga_detection_peak_backsub = "orgaDetectionPeakBacksub",
                        measure_detection_peak_backsub = "measureDetectionPeakBacksub",
-                       orga_distance_normalized = "detectionDistanceNormalized")
+                       orga_distance_nucleus_normalized = "detectionDistanceNormalized")
       
         merge_cell_organelle_result <- merge_cell_organelle %>%
           rename(
@@ -414,12 +473,12 @@ server <- function(input, output, session) {
                        y_nucleus_center_mass = "nucleusCenterMassY",
                        orga_intensity_backsub = "orgaMeanIntensityBacksub",
                        measure_intensity_backsub = "measureMeanIntensityBacksub",
-                       orga_meanDistance_pixel = "detectionDistanceRaw.mean",
-                       orga_meanDistance_calibrated = "detectionDistanceCalibrated.mean",
+                       orga_meanDistance_nucleus_pixel = "detectionDistanceRaw.mean",
+                       orga_meanDistance_nucleus_calibrated = "detectionDistanceCalibrated.mean",
                        measure_intensityOnDetection = "orgaDetectionPeak.mean",
                        orga_intensityOnDetection_backsub = "orgaDetectionPeakBacksub.mean",
                        measure_intensityOnDetection_backsub = "measureDetectionPeakBacksub.mean",
-                       orga_meanDistance_normalized = "detectionDistanceNormalized.mean")
+                       orga_meanDistance_nucleus_normalized = "detectionDistanceNormalized.mean")
       
       merged_summary_result <- merged_summary %>% 
         rename(

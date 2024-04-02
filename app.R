@@ -232,8 +232,8 @@ server <- function(input, output, session) {
       
       # path to folder where the directories for the measurements are
       # directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
-      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single_measure_membrane_1/"
-      # directory <- global$datapath
+      # directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single_measure_membrane_1/"
+      directory <- global$datapath
       directory <- paste0(directory, .Platform$file.sep)
       
       # result_name = "Analysis_test"

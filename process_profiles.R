@@ -3,14 +3,10 @@
 collect_individual_profiles_new <- function(inputdir, 
                                             regular_expression, 
                                             series, 
+                                            name, 
                                             cell_measure_data,
                                             check_measureChannelCell) {
-  
-  # TODO: problematic setting as it depends on the number of columns
-  cell_col = ncol(cell_measure_data)
 
-  name = "intensityDistance.csv"
-  
   print("Retrieving individual files")
   
   file_name <- paste0(inputdir,name)
@@ -50,17 +46,10 @@ collect_individual_profiles_new <- function(inputdir,
       
     }
     
-    # check_measureChannelIntensity = "measureIntensity" %in% colnames(value_measure)
-    
+    # if measurement in other channel
     if (check_measureChannelCell) {
       
       print("check_measureChannelCell: Measurement in other channel identified")
-      
-    }
-    
-    
-    # if measurement in other channel
-    if (check_measureChannelCell) {
       
       value_measure_mean <- value_measure %>% 
         group_by(identifier, series, cell, intensityDistanceCalibrated) %>% 
@@ -132,9 +121,7 @@ grouped_intensity_map <- function(individual_maps,
                                   background_subtract,
                                   check_measureChannelCell,
                                   check_measureChannelIntensity) {
-  
-  intensity_maps_col = ncol(individual_maps)
-  
+
   if (check_measureChannelCell && check_measureChannelIntensity) {
     
     if (background_subtract) {

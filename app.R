@@ -421,7 +421,6 @@ server <- function(input, output, session) {
       # ========================================================================
       incProgress(1/progress, detail = paste("Saving distance results. Step: ", 2))
       
-      # ------------------------------------------------------------------------
       # renaming for organelle result tables
       detection_lookup <- c(cell_area = "cellArea",
                        numberOfDetections = "numberDetections",
@@ -461,7 +460,6 @@ server <- function(input, output, session) {
                  append=FALSE, 
                  showNA=TRUE)
       
-      # ------------------------------------------------------------------------
       # renaming for cell results
       cell_lookup <- c(cell_area = "cellArea",
                        orga_numberOfDetections = "numberDetections",
@@ -540,12 +538,16 @@ server <- function(input, output, session) {
       # ========================================================================
       
       if (intensity_profiles) {
+        incProgress(1/progress, detail = paste("Processing intensity profiles", 5))
         
+        intensityProfile_nucleus = "intensityDistance.csv"
+
         # collect individual files
         print("Collecting individual intensity maps")
         individual_intensity_maps <- collect_individual_profiles_new(directory, 
                                                                      series_regex, 
-                                                                     single_series, 
+                                                                     single_series,
+                                                                     intensityProfile_nucleus,
                                                                      cell_measure_filter,
                                                                      measureChannelCell)
         rownames(individual_intensity_maps) <- c()
@@ -562,9 +564,8 @@ server <- function(input, output, session) {
                                                            0)
         
         # ----------------------------------------------------------------------
-        # group intensity maps
         print("Computing mean of individual intensity maps")
-        incProgress(1/progress, detail = paste("Plotting intensity ratio", 5))
+
         value_lists <- grouped_intensity_map(individual_intensity_maps, 
                                              plot_background_subtract,
                                              measureChannelCell,
@@ -579,41 +580,53 @@ server <- function(input, output, session) {
         name_distance_membrane = "organelleDistanceFromMembrane.csv"
         
         distance_membrane_file_exists = file.exists(paste0(directory, name_distance_membrane))
+        # distance_membrane_file_exists = FALSE 
         
         if (distance_membrane_file_exists) {
           
           cat(file=stderr(), "Distance from membrane exists")
+          
+          intensityProfile_membrane = "intensityDistanceFromMembrane.csv"
+          
+          
+          
+          # collect individual files
+          print("Collecting individual intensity maps for membrane measurement")
+          individual_intensity_maps_membrane <- collect_individual_profiles_new(directory,
+                                                                                series_regex,
+                                                                                single_series,
+                                                                                intensityProfile_membrane,
+                                                                                cell_measure_filter,
+                                                                                measureChannelCell)
+          
+          measureChannelIntensity_membrane = "mean_measureIntensity" %in% colnames(individual_intensity_maps_membrane)
+          
+          grouped_intensity_maps_membrane <- grouped_intensity_map(individual_intensity_maps_membrane, 
+                                                                   plot_background_subtract,
+                                                                   measureChannelCell,
+                                                                   measureChannelIntensity_membrane)
+          
+          intensity_map_membrane_result <- grouped_intensity_maps_membrane$raw
+          intensity_map_membrane_result_norm <-  grouped_intensity_maps_membrane$norm
+          
+          write.xlsx(file = paste0( result_path,  "_intensityProfile_Membrane.xlsx", sep = ""), 
+                     intensity_map_membrane_result, 
+                     sheetName="Sheet1",  
+                     colNames=TRUE, 
+                     rowNames=TRUE, 
+                     append=FALSE, 
+                     showNA=TRUE)
           
         } else {
           
           cat(file=stderr(), "Distance from membrane does not exist")
           
         }
-        
-        # ----------------------------------------------------------------------
-        print("Saving intensity data")
-        incProgress(1/progress, detail = paste("Saving intensity data", 6))
-        write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
-                   intensity_map_result, 
-                   sheetName="Sheet1",  
-                   colNames=TRUE, 
-                   rowNames=TRUE, 
-                   append=FALSE, 
-                   showNA=TRUE)
-        
-        write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
-                   intensity_ratio_results, 
-                   sheetName="Sheet1",  
-                   colNames=TRUE, 
-                   rowNames=TRUE, 
-                   append=FALSE, 
-                   showNA=TRUE)
-        
         # ----------------------------------------------------------------------
         print("Plotting intensity data")
         plot_intensity_ratio(intensity_ratio_results, "orga", plots_intensity)
         
-        incProgress(1/progress, detail = paste("Plotting intensity maps", 7))
+        incProgress(1/progress, detail = paste("Plotting intensity maps", 6))
         
         organelle_profile <- plot_intensity_map(intensity_map_result, 
                                                 intensity_map_result_norm, 
@@ -654,8 +667,29 @@ server <- function(input, output, session) {
           
         }
         
+        # ----------------------------------------------------------------------
+        print("Saving intensity data")
+        incProgress(1/progress, detail = paste("Saving intensity data", 7))
+        
+        write.xlsx(file = paste0( result_path,  "_intensityProfile_Nucleus.xlsx", sep = ""), 
+                   intensity_map_result, 
+                   sheetName="Sheet1",  
+                   colNames=TRUE, 
+                   rowNames=TRUE, 
+                   append=FALSE, 
+                   showNA=TRUE)
+        
+        write.xlsx(file = paste0( result_path,  "_intensityRatio_Nucleus.xlsx", sep = ""), 
+                   intensity_ratio_results, 
+                   sheetName="Sheet1",  
+                   colNames=TRUE, 
+                   rowNames=TRUE, 
+                   append=FALSE, 
+                   showNA=TRUE)
+        
       }
-      
+      # ========================================================================
+      # End processing
       # ========================================================================
       incProgress(1/progress, detail = paste("Done", 8))
       }) # end of progess

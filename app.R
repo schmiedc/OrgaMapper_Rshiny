@@ -232,7 +232,7 @@ server <- function(input, output, session) {
       
       # path to folder where the directories for the measurements are
       # directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
-      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single_measure/"
+      directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Feature_tests/output_single_measure_membrane_1/"
       # directory <- global$datapath
       directory <- paste0(directory, .Platform$file.sep)
       
@@ -516,8 +516,6 @@ server <- function(input, output, session) {
                                                      norm_distance_nucleus,
                                                      plot_background_subtract)
       
-      # TODO: add organelle distance from membrane
-      
       # ------------------------------------------------------------------------
       incProgress(1/progress, detail = paste("Display plots. Step: ", 4))
       
@@ -540,49 +538,30 @@ server <- function(input, output, session) {
       # ========================================================================
       # Process intensity profiles 
       # ========================================================================
-      # TODO: add intensity profiles from membrane
       
       if (intensity_profiles) {
         
         # collect individual files
-        print("Computing individual intensity maps")
+        print("Collecting individual intensity maps")
         individual_intensity_maps <- collect_individual_profiles_new(directory, 
                                                                      series_regex, 
                                                                      single_series, 
                                                                      cell_measure_filter,
                                                                      measureChannelCell)
         rownames(individual_intensity_maps) <- c()
-        head(individual_intensity_maps)
         
+        # Identify if a measurement channel is present
         measureChannelIntensity = "mean_measureIntensity" %in% colnames(individual_intensity_maps)
         
-        if (measureChannelIntensity) {
-          
-          print("Measurement in other channel identified")
-          
-        } else {
-          
-          print("No measurement channel detected")
-          
-        }
-        
+        # ----------------------------------------------------------------------
         # create intensity ratio data and plots
-        print("Computing and plotting intensity ratio")
-        intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 
-                                                            10, 
-                                                            bin_width, 
-                                                            0)
+        print("Computing intensity ratio")
+        intensity_ratio_results <- compute_intensity_ratio(individual_intensity_maps, 
+                                                           10, 
+                                                           bin_width, 
+                                                           0)
         
-        write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
-                   intensity_ratio_results, 
-                   sheetName="Sheet1",  
-                   colNames=TRUE, 
-                   rowNames=TRUE, 
-                   append=FALSE, 
-                   showNA=TRUE)
-        
-        plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
-        
+        # ----------------------------------------------------------------------
         # group intensity maps
         print("Computing mean of individual intensity maps")
         incProgress(1/progress, detail = paste("Plotting intensity ratio", 5))
@@ -594,10 +573,25 @@ server <- function(input, output, session) {
         intensity_map_result <- value_lists$raw
         intensity_map_result_norm <- value_lists$norm
         
-        head(intensity_map_result)
+        # ----------------------------------------------------------------------
+        # TODO: Compute mean intensity for membrane measurements
+        # check if measurements from membrane exist
+        name_distance_membrane = "organelleDistanceFromMembrane.csv"
+        
+        distance_membrane_file_exists = file.exists(paste0(directory, name_distance_membrane))
+        
+        if (distance_membrane_file_exists) {
+          
+          cat(file=stderr(), "Distance from membrane exists")
+          
+        } else {
+          
+          cat(file=stderr(), "Distance from membrane does not exist")
+          
+        }
         
         # ----------------------------------------------------------------------
-        print("Saving raw intensity maps")
+        print("Saving intensity data")
         incProgress(1/progress, detail = paste("Saving intensity data", 6))
         write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
                    intensity_map_result, 
@@ -607,18 +601,28 @@ server <- function(input, output, session) {
                    append=FALSE, 
                    showNA=TRUE)
         
+        write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
+                   intensity_ratio_results, 
+                   sheetName="Sheet1",  
+                   colNames=TRUE, 
+                   rowNames=TRUE, 
+                   append=FALSE, 
+                   showNA=TRUE)
+        
         # ----------------------------------------------------------------------
-        print("Plotting intensity maps")
+        print("Plotting intensity data")
+        plot_intensity_ratio(intensity_ratio_results, "orga", plots_intensity)
+        
         incProgress(1/progress, detail = paste("Plotting intensity maps", 7))
         
         organelle_profile <- plot_intensity_map(intensity_map_result, 
-                                         intensity_map_result_norm, 
-                                         "orga", 
-                                         bin_width, 
-                                         upper_limit,
-                                         bin_width_norm,
-                                         upper_limit_norm,
-                                         plots_intensity)
+                                                intensity_map_result_norm, 
+                                                "orga", 
+                                                bin_width, 
+                                                upper_limit,
+                                                bin_width_norm,
+                                                upper_limit_norm,
+                                                plots_intensity)
         
         output$intProfile_organelle <- renderPlot({
           
@@ -627,6 +631,7 @@ server <- function(input, output, session) {
           
         })
         
+        # Intensity maps based on measurement channel
         if (measureChannelCell && measureChannelIntensity) {
           
           print("Plotting intensity maps for measure channel")

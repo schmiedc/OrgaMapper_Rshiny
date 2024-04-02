@@ -51,7 +51,7 @@ boxplot_theme <- function() {
 
 # compute intensity ratio
 # needs to be revised
-compute_intensity_ration <- function(dataframe_value, perimeter, bin_width, perimeter_offset) {
+compute_intensity_ratio <- function(dataframe_value, perimeter, bin_width, perimeter_offset) {
 
   
   perimeter_periphery = ( perimeter + perimeter_offset ) / bin_width
@@ -75,7 +75,7 @@ compute_intensity_ration <- function(dataframe_value, perimeter, bin_width, peri
   
 }
 
-plot_intensity_ration <- function(dataFrame, name, directory) {
+plot_intensity_ratio <- function(dataFrame, name, directory) {
   
   plot_intensity <- ggplot(dataFrame, aes(x=identifier, y=intensity_ratio)) +
     ggtitle(sprintf("Intensity Ratio \n%s channel", name)) + 

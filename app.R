@@ -163,6 +163,7 @@ ui <- fluidPage(
                     column(width = 6, offset = 0,
                       
                       hr(),
+                      tags$p("OrgaMapper 2.0.0 analysis"),
                       tags$p("Christopher Schmied"),
                       tags$p("schmied@fmp-berlin.de"),
                       tags$p("Cellular Imaging - Core facility")

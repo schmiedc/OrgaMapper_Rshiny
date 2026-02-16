@@ -457,7 +457,10 @@ server <- function(input, output, session) {
             )
           )
       
-      # TODO: Cells with no detections are now empty
+        
+      # remove cells with no detection
+      merge_cell_organelle_result_filtered <- merge_cell_organelle_result[merge_cell_organelle_result$numberOfDetections != 0, ]
+      
       # save processed data
       write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
                  merge_cell_organelle_result, 
@@ -485,6 +488,7 @@ server <- function(input, output, session) {
                        measure_intensityOnDetection_backsub = "measureDetectionPeakBacksub.mean",
                        orga_meanDistance_nucleus_normalized = "detectionDistanceNormalized.mean")
       
+      # NOTE: Cells with no detection are left in
       merged_summary_result <- merged_summary %>% 
         rename(
           any_of(
@@ -518,7 +522,6 @@ server <- function(input, output, session) {
       
       cat(file=stderr(), "Creating detection measurement plots", "\n")
       
-      # TODO: This throws and error since it contains empty values
       detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                      merged_summary,
                                                      plots_distance,

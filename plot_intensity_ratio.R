@@ -53,7 +53,6 @@ boxplot_theme <- function() {
 # needs to be revised
 compute_intensity_ratio <- function(dataframe_value, perimeter, bin_width, perimeter_offset) {
 
-  
   perimeter_periphery = ( perimeter + perimeter_offset ) / bin_width
   perimeter_bin = perimeter / bin_width
 

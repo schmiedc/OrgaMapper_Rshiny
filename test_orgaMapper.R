@@ -32,7 +32,7 @@ norm_distance_nucleus = 0.7
 
 # TODO if file contains series number or the already present column
 # needs to default to something sensible if not possible
-single_series = TRUE
+single_series = FALSE
 series_regex = "(?<=_)\\d*($)"
 
 # TODO apply background subtraction for plots
@@ -129,9 +129,11 @@ merge_cell_organelle_result <- merge_cell_organelle %>%
   )
 
 # TODO: Cells with no detections are now empty
+merge_cell_organelle_result_filtered <- merge_cell_organelle_result[merge_cell_organelle_result$numberOfDetections != 0, ]
+
 # save processed data
 write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
-           merge_cell_organelle_result, 
+           merge_cell_organelle_result_filtered, 
            sheetName="Sheet1",  
            colNames=TRUE, 
            rowNames=TRUE, 
@@ -196,33 +198,227 @@ detection_plots <- plot_detection_measurements(merge_cell_organelle,
 do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
 
+# ------------------------------------------------------------------------------
+# Save files
+
+# renaming for organelle result tables
+detection_lookup <- c(cell_area = "cellArea",
+                      numberOfDetections = "numberDetections",
+                      orga_intensity = "orgaMeanIntensity",
+                      orga_background = "orgaMeanBackground",
+                      x_nucleus_center_mass = "nucleusCenterMassX",
+                      y_nucleus_center_mass = "nucleusCenterMassY",
+                      measure_intensity = "measureMeanIntensity",
+                      measure_background = "measureMeanBackground",
+                      orga_intensity_backsub = "orgaMeanIntensityBacksub",
+                      measure_intensity_backsub = "measureMeanIntensityBacksub",
+                      x_detection = "xDetection",
+                      y_detection = "yDetection",
+                      orga_distance_nucleus_pixel = "detectionDistanceRaw",
+                      orga_distance_nucleus_calibrated = "detectionDistanceCalibrated",
+                      orga_detection_peak = "orgaDetectionPeak",
+                      measure_detection_peak = "measureDetectionPeak",
+                      orga_detection_peak_backsub = "orgaDetectionPeakBacksub",
+                      measure_detection_peak_backsub = "measureDetectionPeakBacksub",
+                      orga_distance_nucleus_normalized = "detectionDistanceNormalized")
+
+merge_cell_organelle_result <- merge_cell_organelle %>%
+  rename(
+    any_of(
+      
+      detection_lookup
+      
+    )
+  )
+
+
+
+# remove cells with no detection
+merge_cell_organelle_result_filter <- merge_cell_organelle_result[merge_cell_organelle_result$numberOfDetections != 0, ]
+
+# save processed data
+write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
+           merge_cell_organelle_result, 
+           sheetName="Sheet1",  
+           colNames=TRUE, 
+           rowNames=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+# renaming for cell results
+cell_lookup <- c(cell_area = "cellArea",
+                 orga_numberOfDetections = "numberDetections",
+                 orga_intensity = "orgaMeanIntensity",
+                 orga_background = "orgaMeanBackground",
+                 measure_intensity = "measureMeanIntensity",
+                 measure_background = "measureMeanBackground",
+                 x_nucleus_center_mass = "nucleusCenterMassX",
+                 y_nucleus_center_mass = "nucleusCenterMassY",
+                 orga_intensity_backsub = "orgaMeanIntensityBacksub",
+                 measure_intensity_backsub = "measureMeanIntensityBacksub",
+                 orga_meanDistance_nucleus_pixel = "detectionDistanceRaw.mean",
+                 orga_meanDistance_nucleus_calibrated = "detectionDistanceCalibrated.mean",
+                 measure_intensityOnDetection = "orgaDetectionPeak.mean",
+                 orga_intensityOnDetection_backsub = "orgaDetectionPeakBacksub.mean",
+                 measure_intensityOnDetection_backsub = "measureDetectionPeakBacksub.mean",
+                 orga_meanDistance_nucleus_normalized = "detectionDistanceNormalized.mean")
+
+# NOTE: Cells with no detection are left in
+merged_summary_result <- merged_summary %>% 
+  rename(
+    any_of(
+      cell_lookup
+    )
+  )
+
+# merged_summary
+write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
+           merged_summary_result, 
+           sheetName="Sheet1",  
+           colNames=TRUE, 
+           rowNames=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+
+# ------------------------------------------------------------------------------
+# plot intensity profiles 
+intensityProfile_nucleus = "intensityDistance.csv"
+
+# collect individual files
+print("Collecting individual intensity maps")
+individual_intensity_maps <- collect_individual_profiles_new(directory, 
+                                                             series_regex, 
+                                                             single_series,
+                                                             intensityProfile_nucleus,
+                                                             cell_measure_filter,
+                                                             measureChannelCell)
+
+
+# Identify if a measurement channel is present
+measureChannelIntensity = "mean_measureIntensity" %in% colnames(individual_intensity_maps)
+
+
+# ----------------------------------------------------------------------
+# create intensity ratio data and plots
+print("Computing intensity ratio")
+intensity_ratio_results <- compute_intensity_ratio(individual_intensity_maps, 
+                                                   10, 
+                                                   bin_width, 
+                                                   0)
+
+# ----------------------------------------------------------------------
+print("Computing mean of individual intensity maps")
+
+value_lists <- grouped_intensity_map(individual_intensity_maps, 
+                                     plot_background_subtract,
+                                     measureChannelCell,
+                                     measureChannelIntensity)
+
+intensity_map_result <- value_lists$raw
+intensity_map_result_norm <- value_lists$norm
+
+
+# ----------------------------------------------------------------------
+print("Plotting intensity data")
+plot_intensity_ratio(intensity_ratio_results, "orga", plots_intensity)
+
+organelle_profile <- plot_intensity_map(intensity_map_result, 
+                                        intensity_map_result_norm, 
+                                        "orga", 
+                                        bin_width, 
+                                        upper_limit,
+                                        bin_width_norm,
+                                        upper_limit_norm,
+                                        plots_intensity)
+
+output$intProfile_organelle <- renderPlot({
+  
+  intProfile_orga <- do.call(grid.arrange, organelle_profile)
+  print(intProfile_orga)
+  
+})
+
+# Intensity maps based on measurement channel
+if (measureChannelCell && measureChannelIntensity) {
+  
+  cat(file=stderr(), "Plotting intensity maps for measure channel", "\n")
+  
+  measure_profile <- plot_intensity_map(intensity_map_result, 
+                                        intensity_map_result_norm, 
+                                        "measure", 
+                                        bin_width, 
+                                        upper_limit,
+                                        bin_width_norm,
+                                        upper_limit_norm,
+                                        plots_intensity)
+  
+  output$intProfile_measure <- renderPlot({
+    
+    intProfile_meas <- do.call(grid.arrange, measure_profile)
+    print(intProfile_meas)
+    
+  })
+  
+}
+
+# ----------------------------------------------------------------------
+# Save intensity data
+write.xlsx(file = paste0( result_path,  "_intensityProfile_Nucleus.xlsx", sep = ""), 
+           intensity_map_result, 
+           sheetName="Sheet1",  
+           colNames=TRUE, 
+           rowNames=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+write.xlsx(file = paste0( result_path,  "_intensityRatio_Nucleus.xlsx", sep = ""), 
+           intensity_ratio_results, 
+           sheetName="Sheet1",  
+           colNames=TRUE, 
+           rowNames=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
 
 # ------------------------------------------------------------------------------
-# plot intensity profiles 
+# collect individual files
+print("Computing individual intensity maps")
 
-if (analyze_signal_profiles) {
-  
-  # ------------------------------------------------------------------------------
-  # collect individual files
-  print("Computing individual intensity maps")
-  individual_intensity_maps <- collect_individual_profiles_new(directory, 
+
+individual_intensity_maps <- collect_individual_profiles_new(directory, 
                                                                series_regex, 
                                                                single_series, 
                                                                cell_measure_filter)
-  rownames(individual_intensity_maps) <- c()
-  head(individual_intensity_maps)
+rownames(individual_intensity_maps) <- c()
+head(individual_intensity_maps)
   
-  # create intensity ratio data and plots
-  print("Computing and plotting intensity ratio")
-  intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 
+# create intensity ratio data and plots
+print("Computing and plotting intensity ratio")
+intensity_ratio_results <- compute_intensity_ration(individual_intensity_maps, 
                                                       10, 
                                                       bin_width, 
                                                       0)
   
-  write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
+write.xlsx(file = paste0( result_path,  "_intensityRatio.xlsx", sep = ""), 
              intensity_ratio_results, 
              sheetName="Sheet1",  
              col.names=TRUE, 
@@ -230,19 +426,19 @@ if (analyze_signal_profiles) {
              append=FALSE, 
              showNA=TRUE)
   
-  plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
+plot_intensity_ration(intensity_ratio_results, "orga", plots_intensity)
   
-  # group intensity maps
-  print("Computing mean of individual intensity maps")
-  value_lists <- grouped_intensity_map(individual_intensity_maps)
+# group intensity maps
+print("Computing mean of individual intensity maps")
+value_lists <- grouped_intensity_map(individual_intensity_maps)
   
-  intensity_map_result <- value_lists$raw
-  intensity_map_result_norm <- value_lists$norm
+intensity_map_result <- value_lists$raw
+intensity_map_result_norm <- value_lists$norm
   
-  head(intensity_map_result)
-  # ------------------------------------------------------------------------------
-  print("Saving raw intensity maps")
-  write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
+head(intensity_map_result)
+# ------------------------------------------------------------------------------
+print("Saving raw intensity maps")
+write.xlsx(file = paste0( result_path,  "_intensityProfile.xlsx", sep = ""), 
              intensity_map_result, 
              sheetName="Sheet1",  
              col.names=TRUE, 
@@ -250,10 +446,10 @@ if (analyze_signal_profiles) {
              append=FALSE, 
              showNA=TRUE)
   
-  # ------------------------------------------------------------------------------
-  print("Plotting intensity maps")
+# ------------------------------------------------------------------------------
+print("Plotting intensity maps")
   
-  orga_plots <- plot_intensity_map(intensity_map_result, 
+orga_plots <- plot_intensity_map(intensity_map_result, 
                      intensity_map_result_norm, 
                      "orga", 
                      bin_width, 
@@ -261,12 +457,12 @@ if (analyze_signal_profiles) {
                      bin_width_norm,
                      upper_limit_norm,
                      plots_intensity)
+
+do.call(grid.arrange, orga_plots)
   
-  do.call(grid.arrange, orga_plots)
-  
-  if (cell_column == 10 && orga_column == 10) {
+if (cell_column == 10 && orga_column == 10) {
     
-    measure_plots <- plot_intensity_map(intensity_map_result, 
+measure_plots <- plot_intensity_map(intensity_map_result, 
                                 intensity_map_result_norm, 
                                 "measure", 
                                 bin_width, 
@@ -275,9 +471,8 @@ if (analyze_signal_profiles) {
                                 upper_limit_norm,
                                 plots_intensity)
     
-    do.call(grid.arrange, measure_plots)
-    
-  }
+  do.call(grid.arrange, measure_plots)
     
 }
+  
 

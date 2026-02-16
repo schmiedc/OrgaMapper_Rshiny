@@ -92,143 +92,116 @@ merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
                                                   measureChannelCell,
                                                   measureChannelOrganelle)
 
-write.xlsx(file = paste0( result_path, "_merge_cell_organelle.xlsx", sep = ""), 
-           merge_cell_organelle, 
+merged_summary <- create_summary_table(merge_cell_organelle,
+                                       cell_measure_filter)
+
+# ------------------------------------------------------------------------------
+# saving data
+
+# renaming for organelle result tables
+detection_lookup <- c(cell_area = "cellArea",
+                      numberOfDetections = "numberDetections",
+                      orga_intensity = "orgaMeanIntensity",
+                      orga_background = "orgaMeanBackground",
+                      x_nucleus_center_mass = "nucleusCenterMassX",
+                      y_nucleus_center_mass = "nucleusCenterMassY",
+                      measure_intensity = "measureMeanIntensity",
+                      measure_background = "measureMeanBackground",
+                      orga_intensity_backsub = "orgaMeanIntensityBacksub",
+                      measure_intensity_backsub = "measureMeanIntensityBacksub",
+                      x_detection = "xDetection",
+                      y_detection = "yDetection",
+                      orga_distance_nucleus_pixel = "detectionDistanceRaw",
+                      orga_distance_nucleus_calibrated = "detectionDistanceCalibrated",
+                      orga_detection_peak = "orgaDetectionPeak",
+                      measure_detection_peak = "measureDetectionPeak",
+                      orga_detection_peak_backsub = "orgaDetectionPeakBacksub",
+                      measure_detection_peak_backsub = "measureDetectionPeakBacksub",
+                      orga_distance_nucleus_normalized = "detectionDistanceNormalized")
+
+merge_cell_organelle_result <- merge_cell_organelle %>%
+  rename(
+    any_of(
+      
+      detection_lookup
+      
+    )
+  )
+
+# TODO: Cells with no detections are now empty
+# save processed data
+write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
+           merge_cell_organelle_result, 
            sheetName="Sheet1",  
            colNames=TRUE, 
            rowNames=TRUE, 
            append=FALSE, 
            showNA=TRUE)
 
+# renaming for cell results
+cell_lookup <- c(cell_area = "cellArea",
+                 orga_numberOfDetections = "numberDetections",
+                 orga_intensity = "orgaMeanIntensity",
+                 orga_background = "orgaMeanBackground",
+                 measure_intensity = "measureMeanIntensity",
+                 measure_background = "measureMeanBackground",
+                 x_nucleus_center_mass = "nucleusCenterMassX",
+                 y_nucleus_center_mass = "nucleusCenterMassY",
+                 orga_intensity_backsub = "orgaMeanIntensityBacksub",
+                 measure_intensity_backsub = "measureMeanIntensityBacksub",
+                 orga_meanDistance_nucleus_pixel = "detectionDistanceRaw.mean",
+                 orga_meanDistance_nucleus_calibrated = "detectionDistanceCalibrated.mean",
+                 measure_intensityOnDetection = "orgaDetectionPeak.mean",
+                 orga_intensityOnDetection_backsub = "orgaDetectionPeakBacksub.mean",
+                 measure_intensityOnDetection_backsub = "measureDetectionPeakBacksub.mean",
+                 orga_meanDistance_nucleus_normalized = "detectionDistanceNormalized.mean")
 
-merged_summary <- create_summary_table(merge_cell_organelle,
-                                       cell_measure_filter)
-
-# ------------------------------------------------------------------------------
-# renaming for organelle result tables
-if (cell_column == 10 && orga_column == 10) {
-  
-  merge_cell_organelle_result <- merge_cell_organelle %>%
-    rename(
-      cell_area = cellArea,
-      numberOfDetections = numberDetections,
-      orga_intensity = orgaMeanIntensity,
-      orga_background = orgaMeanBackground,
-      measure_intensity = measureMeanIntensity,
-      measure_background = measureMeanBackground,
-      orga_intensity_backsub = orgaMeanIntensityBacksub,
-      measure_intensity_backsub = measureMeanIntensityBacksub,
-      x_detection = xDetection,
-      y_detection = yDetection,
-      orga_distance_pixel = detectionDistanceRaw,
-      orga_distance_calibrated = detectionDistanceCalibrated,
-      orga_detection_peak = orgaDetectionPeak,
-      measure_detection_peak = measureDetectionPeak,
-      orga_detection_peak_backsub = orgaDetectionPeakBacksub,
-      measure_detection_peak_backsub = measureDetectionPeakBacksub,
-      orga_distance_normalized = detectionDistanceNormalized
-           )
-  
-} else {
-  
-  merge_cell_organelle_result <- merge_cell_organelle %>%
-    rename(
-      cell_area = cellArea,
-      numberOfDetections = numberDetections,
-      orga_intensity = orgaMeanIntensity,
-      orga_background = orgaMeanBackground,
-      orga_intensity_backsub = orgaMeanIntensityBacksub,
-      x_detection = xDetection,
-      y_detection = yDetection,
-      orga_distance_pixel = detectionDistanceRaw,
-      orga_distance_calibrated = detectionDistanceCalibrated,
-      orga_detection_peak = orgaDetectionPeak,
-      orga_detection_peak_backsub = orgaDetectionPeakBacksub,
-      orga_distance_normalized = detectionDistanceNormalized
+merged_summary_result <- merged_summary %>% 
+  rename(
+    any_of(
+      cell_lookup
     )
-  
-}
+  )
 
-# ------------------------------------------------------------------------------
-# save processed data
-write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
-           merge_cell_organelle_result, 
-           sheetName="Sheet1",  
-           col.names=TRUE, 
-           row.names=TRUE, 
-           append=FALSE, 
-           showNA=TRUE)
-
-# ------------------------------------------------------------------------------
-
-if (cell_column == 10 && orga_column == 10) {
-  
-  merged_summary_result <- merged_summary %>%
-    rename(
-      cell_area = cellArea,
-      orga_numberOfDetections = numberDetections,
-      orga_intensity = orgaMeanIntensity,
-      orga_background = orgaMeanBackground,
-      measure_intensity = measureMeanIntensity,
-      measure_background = measureMeanBackground,
-      orga_intensity_backsub = orgaMeanIntensityBacksub,
-      measure_intensity_backsub = measureMeanIntensityBacksub,
-      orga_meanDistance_pixel = detectionDistanceRaw.mean,
-      orga_meanDistance_calibrated = detectionDistanceCalibrated.mean,
-      orga_intensityOnDetection = orgaDetectionPeak.mean,
-      measure_intensityOnDetection = measureDetectionPeak.mean,
-      orga_intensityOnDetection_backsub = orgaDetectionPeakBacksub.mean,
-      measure_intensityOnDetection_backsub = measureDetectionPeakBacksub.mean,
-      orga_meanDistance_normalized = detectionDistanceNormalized.mean
-      )
-  
-} else {
-  
-  merged_summary_result <- merged_summary %>%
-    rename(
-      cell_area = cellArea,
-      orga_numberOfDetections = numberDetections,
-      orga_intensity = orgaMeanIntensity,
-      orga_background = orgaMeanBackground,
-      orga_intensity_backsub = orgaMeanIntensityBacksub,
-      orga_meanDistance_pixel = detectionDistanceRaw.mean,
-      orga_meanDistance_calibrated = detectionDistanceCalibrated.mean,
-      orga_intensityOnDetection = orgaDetectionPeak.mean,
-      orga_intensityOnDetection_backsub = orgaDetectionPeakBacksub.mean,
-      orga_meanDistance_normalized = detectionDistanceNormalized.mean
-    )
-  
-}
 # merged_summary
 write.xlsx(file = paste0( result_path,  "_cell.xlsx", sep = ""), 
            merged_summary_result, 
            sheetName="Sheet1",  
-           col.names=TRUE, 
-           row.names=TRUE, 
+           colNames=TRUE, 
+           rowNames=TRUE, 
            append=FALSE, 
            showNA=TRUE)
 
+cat(file=stderr(), "Summary results saved", "\n")
+
 # ------------------------------------------------------------------------------
 # plot data
+
 cell_plots <- plot_cell_measurements(cell_measure_filter,
                                      plots_distance,
-                                     cell_column,
-                                     orga_column,
+                                     measureChannelCell,
+                                     measureChannelOrganelle,
                                      plot_background_subtract)
 
-
-
+# TODO: This throws and error since it contains empty values
 detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                merged_summary,
                                                plots_distance,
-                                               cell_column,
-                                               orga_column,
+                                               measureChannelCell,
+                                               measureChannelOrganelle,
                                                cal_distance_nucleus,
                                                norm_distance_nucleus,
                                                plot_background_subtract)
 
 do.call(grid.arrange, cell_plots)
 do.call(grid.arrange, detection_plots)
+
+
+
+
+
+# ------------------------------------------------------------------------------
+# plot intensity profiles 
 
 if (analyze_signal_profiles) {
   

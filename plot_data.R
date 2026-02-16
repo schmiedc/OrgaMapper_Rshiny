@@ -144,6 +144,9 @@ plot_cell_measurements <- function(cell_data_table,
     
     dataSubset <- subset(cell_measure_long, cell_measure_long$name==measure1[index])
     
+    # remove NaN for plotting
+    dataSubset <- subset(dataSubset, is.finite(measurement))
+    
     plot_cell <- ggplot(dataSubset, aes(x=identifier, y=measurement)) +
       geom_boxplot(outlier.size = 0, outlier.shape = 1) +
       stat_boxplot(geom = 'errorbar', width = 0.2) +
@@ -184,6 +187,9 @@ plot_cell_measurements <- function(cell_data_table,
     cell_measure_filter_new <- cell_data_table[c("identifier", measure_intensity_cell)]
     colnames(cell_measure_filter_new)[2] <- "measure"
     
+    # filter out NaN rows
+    cell_measure_filter_new <- subset(cell_measure_filter_new, is.finite(measure))
+    
     plot_cell_measure <- ggplot(cell_measure_filter_new, aes(x=identifier, y=measure)) +
       ggtitle("Cell avg. intensity \nMeasure channel") + 
       xlab("Treatment") +
@@ -216,54 +222,61 @@ plot_detection_measurements <- function(full_data_table,
                                         norm_distance_nucleus,
                                         background_subtract) {
   
-  cat(file=stderr(), "plot_detection_measurements", "\n")
-  
-  # Filter cells with 0 detections
-  full_data_table_filtered <- full_data_table[full_data_table$numberDetections != 0, ]
-  
   # Organelle density plots
   plot_list_detection <- list()
   
-  name_count <- as.data.frame(table(full_data_table_filtered$identifier))
+  name_count <- as.data.frame(table(full_data_table$identifier))
   detect_list <- list()
   detect_list_cal <- list()
-  
+
   # goes through each experiment and calculates Organelle density
   # then peak normalizes the Organelle density
   # collects these normalized density plots in detect_list
   for (name_id in name_count$Var1){
     
-    data_per_name <- subset(full_data_table_filtered, identifier == name_id)
+    data_per_name <- subset(full_data_table, identifier == name_id)
+
+    # ---- normalized distance density ----
+    x_norm <- data_per_name$detectionDistanceNormalized
+    x_norm <- x_norm[is.finite(x_norm)]  # removes NA/NaN/Inf/-Inf
     
-    density_per_name <- density(data_per_name$detectionDistanceNormalized, 
-                                bw = "nrd0", 
-                                n = 512, 
-                                from = 0, 
-                                to = norm_distance_nucleus)
+    if (length(x_norm) >= 2) {
+      density_per_name <- density(x_norm,
+                                  bw = "nrd0",
+                                  n = 512,
+                                  from = 0,
+                                  to = norm_distance_nucleus)
+      
+      data_frame <- data.frame(x = density_per_name$x, y = density_per_name$y)
+      
+      # peak normalisation (safe)
+      ymax <- max(data_frame$y, na.rm = TRUE)
+      data_frame$peak_norm <- if (is.finite(ymax) && ymax > 0) data_frame$y / ymax else NA_real_
+      
+      detect_list[[name_id]] <- data_frame
+    } else {
+      # optional: keep placeholder so rbind doesn't fail later
+      detect_list[[name_id]] <- data.frame(x = numeric(0), y = numeric(0), peak_norm = numeric(0))
+    }
     
-    data_frame <- data.frame(density_per_name$x)
-    data_frame$y <- density_per_name$y
-    colnames(data_frame)[1] <-  "x"
+    # ---- calibrated distance density ----
+    x_cal <- data_per_name$detectionDistanceCalibrated
+    x_cal <- x_cal[is.finite(x_cal)]
     
-    # peak normalisation
-    max = max(data_frame$y, na.rm = FALSE)
-    data_frame$peak_norm <- sapply(data_frame$y, function(x){x /  max})
-    detect_list[[name_id]] <- data_frame
-    
-    # calibrated density distribution
-    cal_density_per_name <- density(data_per_name$detectionDistanceCalibrated, 
-                                    bw = "nrd0", 
-                                    n = 512, 
-                                    from = 0, 
-                                    to = cal_distance_nucleus)
-    
-    data_frame_cal <- data.frame(cal_density_per_name$x)
-    data_frame_cal$y <- cal_density_per_name$y
-    colnames(data_frame_cal)[1] <-  "x"
-    
-    detect_list_cal[[name_id]] <- data_frame_cal
-    
+    if (length(x_cal) >= 2) {
+      cal_density_per_name <- density(x_cal,
+                                      bw = "nrd0",
+                                      n = 512,
+                                      from = 0,
+                                      to = cal_distance_nucleus)
+      
+      data_frame_cal <- data.frame(x = cal_density_per_name$x, y = cal_density_per_name$y)
+      detect_list_cal[[name_id]] <- data_frame_cal
+    } else {
+      detect_list_cal[[name_id]] <- data.frame(x = numeric(0), y = numeric(0))
+    }
   }
+  
   
   # binds collection of normalized density plots and binds them into one dataframe
   cal_list <- do.call("rbind", detect_list_cal)
@@ -381,13 +394,20 @@ plot_detection_measurements <- function(full_data_table,
                         "orga_avgDistance_normalized",
                         "orga_avgDetectionPeak")
   
-  summary_long <- summary_table %>% 
-    pivot_longer(cols=detectionDistanceRaw.mean:detectionDistanceNormalized.mean, 
-                 values_to = "measurement" )
+  summary_long <- summary_table %>%
+    pivot_longer(
+      cols = any_of(c("detectionDistanceCalibrated.mean",
+                      "detectionDistanceNormalized.mean",
+                      organelle_intensity_peak)),
+      values_to = "measurement"
+    )
   
   for (index in seq_along(measure2)) {
     
     dataSubset <- subset(summary_long, summary_long$name==measure2[index])
+    
+    # filter out NaN
+    dataSubset <- subset(dataSubset, is.finite(measurement))
     
     plot_detection <- distancePlot <- ggplot(dataSubset, aes(x=identifier, y=measurement)) +
       geom_boxplot(outlier.size = 0, outlier.shape = 1) +
@@ -429,6 +449,9 @@ plot_detection_measurements <- function(full_data_table,
     
     summary_table_new <- summary_table[c("identifier", measure_intensity_peak)]
     colnames(summary_table_new)[2] <- "measure"
+    
+    # filter out NaN
+    summary_table_new <- subset(summary_table_new, is.finite(measure))
     
     plot_peak_measure <- ggplot(summary_table_new, aes(x=identifier, y=measure)) +
       ggtitle("Avg. detection peak \nMeasure Channel") + 

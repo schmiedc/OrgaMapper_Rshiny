@@ -342,15 +342,6 @@ server <- function(input, output, session) {
                                                         organelle_distance,
                                                         measureChannelCell,
                                                         measureChannelOrganelle)
-      
-      write.xlsx(file = paste0( result_path, "_merge_cell_organelle.xlsx", sep = ""), 
-                 merge_cell_organelle, 
-                 sheetName="Sheet1",  
-                 colNames=TRUE, 
-                 rowNames=TRUE, 
-                 append=FALSE, 
-                 showNA=TRUE)
-      
 
       merged_summary <- create_summary_table(merge_cell_organelle,
                                              cell_measure_filter)
@@ -560,7 +551,6 @@ server <- function(input, output, session) {
       # Process intensity profiles 
       # ========================================================================
       
-      
       if (intensity_profiles) {
         incProgress(1/progress, detail = paste("Processing intensity profiles", 5))
         
@@ -728,17 +718,10 @@ server <- function(input, output, session) {
       cat(file=stderr(), "Processing complete", "\n")
       
       }) # end of progess
-      
-    }, error=function(e) {
-      
+    
+    }, error = function(e) {
       message(e)
-      showNotification(paste0("WARNING:   ", e), type = 'error')
-      
-    }, warning=function(w) {
-      
-      message(w)
-      showNotification(paste0("WARNING:   ", w), type = 'warning')
-      
+      showNotification(paste0("ERROR: ", e$message), type = "error")
     })
       
     })

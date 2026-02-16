@@ -227,9 +227,11 @@ server <- function(input, output, session) {
   observeEvent(input$processData, {
     
     tryCatch({
-      
+  
       withProgress(message = 'Progress:', value = 0, {
       progress = 8
+      
+      cat(file=stderr(), "Loading data", "\n")
       
       # path to folder where the directories for the measurements are
       # directory = "/home/schmiedc/FMP_Docs/Projects/OrgaMapper/2024-02-29_Revision/Tests_manuscript-test/output_bug_test-1/"
@@ -309,6 +311,8 @@ server <- function(input, output, session) {
       # ========================================================================
       incProgress(1/progress, detail = paste("Processing distance data. Step: ", 1))
       
+      cat(file=stderr(), "Processing data", "\n")
+      
       name_distance = "organelleDistance.csv"
       name_cell_measure = "cellMeasurements.csv"
       
@@ -339,9 +343,17 @@ server <- function(input, output, session) {
                                                         measureChannelCell,
                                                         measureChannelOrganelle)
       
+      write.xlsx(file = paste0( result_path, "_merge_cell_organelle.xlsx", sep = ""), 
+                 merge_cell_organelle, 
+                 sheetName="Sheet1",  
+                 colNames=TRUE, 
+                 rowNames=TRUE, 
+                 append=FALSE, 
+                 showNA=TRUE)
+      
+
       merged_summary <- create_summary_table(merge_cell_organelle,
                                              cell_measure_filter)
-      
       
       # ------------------------------------------------------------------------
       # check if measurements from membrane exist
@@ -351,7 +363,7 @@ server <- function(input, output, session) {
       
       if (distance_membrane_file_exists) {
         
-        cat(file=stderr(), "Distance from membrane exists")
+        cat(file=stderr(), "Distance from membrane exists", "\n")
 
         # get files for organelle distance from membrane
         organelle_distance_membrane <- read_collected_files(directory,
@@ -413,7 +425,7 @@ server <- function(input, output, session) {
         
       } else {
         
-        cat(file=stderr(), "Distance from membrane does not exist")
+        cat(file=stderr(), "Distance from membrane does not exist", "\n")
      
       }
       
@@ -421,6 +433,8 @@ server <- function(input, output, session) {
       # save processed data
       # ========================================================================
       incProgress(1/progress, detail = paste("Saving distance results. Step: ", 2))
+      
+      cat(file=stderr(), "Saving summary results", "\n")
       
       # renaming for organelle result tables
       detection_lookup <- c(cell_area = "cellArea",
@@ -451,7 +465,8 @@ server <- function(input, output, session) {
               
             )
           )
-
+      
+      # TODO: Cells with no detections are now empty
       # save processed data
       write.xlsx(file = paste0( result_path, "_detection.xlsx", sep = ""), 
                  merge_cell_organelle_result, 
@@ -495,10 +510,14 @@ server <- function(input, output, session) {
                  append=FALSE, 
                  showNA=TRUE)
       
+      cat(file=stderr(), "Summary results saved", "\n")
+      
       # ========================================================================
       # plot distance data
       # ========================================================================
       incProgress(1/progress, detail = paste("Plotting distance maps. Step: ", 3))
+      
+      cat(file=stderr(), "Creating cell measurement plots", "\n")
       
       cell_plots <- plot_cell_measurements(cell_measure_filter,
                                            plots_distance,
@@ -506,6 +525,9 @@ server <- function(input, output, session) {
                                            measureChannelOrganelle,
                                            plot_background_subtract)
       
+      cat(file=stderr(), "Creating detection measurement plots", "\n")
+      
+      # TODO: This throws and error since it contains empty values
       detection_plots <- plot_detection_measurements(merge_cell_organelle,
                                                      merged_summary,
                                                      plots_distance,
@@ -538,8 +560,11 @@ server <- function(input, output, session) {
       # Process intensity profiles 
       # ========================================================================
       
+      
       if (intensity_profiles) {
         incProgress(1/progress, detail = paste("Processing intensity profiles", 5))
+        
+        cat(file=stderr(), "Creating intensity measurement plots", "\n")
         
         intensityProfile_nucleus = "intensityDistance.csv"
 
@@ -585,7 +610,7 @@ server <- function(input, output, session) {
         
         if (distance_membrane_file_exists) {
           
-          cat(file=stderr(), "Distance from membrane exists")
+          cat(file=stderr(), "Distance from membrane exists", "\n")
           
           intensityProfile_membrane = "intensityDistanceFromMembrane.csv"
           
@@ -648,8 +673,8 @@ server <- function(input, output, session) {
         # Intensity maps based on measurement channel
         if (measureChannelCell && measureChannelIntensity) {
           
-          print("Plotting intensity maps for measure channel")
-          
+          cat(file=stderr(), "Plotting intensity maps for measure channel", "\n")
+
           measure_profile <- plot_intensity_map(intensity_map_result, 
                                               intensity_map_result_norm, 
                                               "measure", 
@@ -669,8 +694,10 @@ server <- function(input, output, session) {
         }
         
         # ----------------------------------------------------------------------
-        print("Saving intensity data")
+        
         incProgress(1/progress, detail = paste("Saving intensity data", 7))
+        
+        cat(file=stderr(), "Saving intensity data", "\n")
         
         write.xlsx(file = paste0( result_path,  "_intensityProfile_Nucleus.xlsx", sep = ""), 
                    intensity_map_result, 
@@ -688,11 +715,18 @@ server <- function(input, output, session) {
                    append=FALSE, 
                    showNA=TRUE)
         
+      } else {
+        
+        cat(file=stderr(), "Plotting of intensity profiles not selected", "\n")
+        
       }
       # ========================================================================
       # End processing
       # ========================================================================
       incProgress(1/progress, detail = paste("Done", 8))
+      
+      cat(file=stderr(), "Processing complete", "\n")
+      
       }) # end of progess
       
     }, error=function(e) {

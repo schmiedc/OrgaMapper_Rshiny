@@ -1,4 +1,4 @@
-setwd("/data1/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
+setwd("/home/schmiedc/FMP_Docs/Repositories/plugins_FMP/orgaMapper_R/")
 
 packages <- c("shiny", "shinyFiles", "openxlsx", "ggplot2", "gridExtra", "tidyverse", "lazyeval")
 if (length(setdiff(packages, rownames(installed.packages()))) > 0) {
@@ -16,8 +16,8 @@ source("plot_intensity_ratio.R")
 # Params
 # path to folder where the directories for the measurements are
 #directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test/"
-directory = "/home/schmiedc/Desktop/OrgaMapper_Data/size_MTM1KOvsWT/output_test/"
 #directory = "/home/schmiedc/Desktop/OrgaMapper_Data/siArl8b_vs_scr/output_test_4thChannel/"
+directory = "/home/schmiedc/Downloads/download/Output/"
 
 result_name = "Analysis_test"
 
@@ -66,31 +66,40 @@ dir.create(plots_intensity, showWarnings = FALSE)
 name_distance = "organelleDistance.csv"
 name_cell_measure = "cellMeasurements.csv"
 
-organelle_distance <- read_collected_files(directory, 
-                                           name_distance, 
-                                           single_series, 
-                                           series_regex)
-
 cell_measure <- read_collected_files(directory, 
                                      name_cell_measure, 
                                      single_series, 
                                      series_regex)
 
-cell_column <- ncol(cell_measure)
-orga_column <- ncol(organelle_distance)
+organelle_distance <- read_collected_files(directory, 
+                                           name_distance, 
+                                           single_series, 
+                                           series_regex)
 
+# Checks if there were measurements in measurement channel
+measureChannelCell = "measureMeanIntensity" %in% colnames(cell_measure)
+measureChannelOrganelle = "measureDetectionPeak" %in% colnames(organelle_distance)
 
 cell_measure_filter <- process_cell_measurements(cell_measure, 
                                                  feret_lower, 
                                                  feret_upper,
-                                                 cell_column,
-                                                 orga_column,
+                                                 measureChannelCell,
+                                                 measureChannelOrganelle,
                                                  feret_filter)
 
 merge_cell_organelle <- process_orga_measurements(cell_measure_filter,
                                                   organelle_distance,
-                                                  cell_column,
-                                                  orga_column)
+                                                  measureChannelCell,
+                                                  measureChannelOrganelle)
+
+write.xlsx(file = paste0( result_path, "_merge_cell_organelle.xlsx", sep = ""), 
+           merge_cell_organelle, 
+           sheetName="Sheet1",  
+           colNames=TRUE, 
+           rowNames=TRUE, 
+           append=FALSE, 
+           showNA=TRUE)
+
 
 merged_summary <- create_summary_table(merge_cell_organelle,
                                        cell_measure_filter)

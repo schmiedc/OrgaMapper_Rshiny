@@ -216,21 +216,24 @@ plot_detection_measurements <- function(full_data_table,
                                         norm_distance_nucleus,
                                         background_subtract) {
   
+  cat(file=stderr(), "plot_detection_measurements", "\n")
+  
+  # Filter cells with 0 detections
+  full_data_table_filtered <- full_data_table[full_data_table$numberDetections != 0, ]
+  
   # Organelle density plots
   plot_list_detection <- list()
   
-  name_count <- as.data.frame(table(full_data_table$identifier))
+  name_count <- as.data.frame(table(full_data_table_filtered$identifier))
   detect_list <- list()
   detect_list_cal <- list()
   
-  head(full_data_table)
-
   # goes through each experiment and calculates Organelle density
   # then peak normalizes the Organelle density
   # collects these normalized density plots in detect_list
   for (name_id in name_count$Var1){
     
-    data_per_name <- subset(full_data_table, identifier == name_id)
+    data_per_name <- subset(full_data_table_filtered, identifier == name_id)
     
     density_per_name <- density(data_per_name$detectionDistanceNormalized, 
                                 bw = "nrd0", 
@@ -261,7 +264,6 @@ plot_detection_measurements <- function(full_data_table,
     detect_list_cal[[name_id]] <- data_frame_cal
     
   }
-  
   
   # binds collection of normalized density plots and binds them into one dataframe
   cal_list <- do.call("rbind", detect_list_cal)

@@ -545,6 +545,7 @@ server <- function(input, output, session) {
 
         # collect individual files
         print("Collecting individual intensity maps")
+
         individual_intensity_maps <- collect_individual_profiles_new(directory, 
                                                                      series_regex, 
                                                                      single_series,
@@ -687,6 +688,20 @@ server <- function(input, output, session) {
                    rowNames=TRUE, 
                    append=FALSE, 
                    showNA=TRUE)
+        
+        # Saves the individual intensity maps as a single file
+        individual_intensity_maps_dir <- file.path(out_dir, "intensity_profiles", fsep = .Platform$file.sep)
+        
+        dir.create( individual_intensity_maps_dir, showWarnings = FALSE)
+        
+        write.xlsx(file = paste0(individual_intensity_maps_dir, .Platform$file.sep, result_name, "_individual_intensityProfile_Nucleus.xlsx", sep = ""), 
+                   individual_intensity_maps, 
+                   sheetName="Sheet1",  
+                   colNames=TRUE, 
+                   rowNames=TRUE, 
+                   append=FALSE, 
+                   showNA=TRUE)
+       
         
       }
       # ========================================================================

@@ -474,8 +474,9 @@ server <- function(input, output, session) {
                        measure_intensity_backsub = "measureMeanIntensityBacksub",
                        orga_meanDistance_nucleus_pixel = "detectionDistanceRaw.mean",
                        orga_meanDistance_nucleus_calibrated = "detectionDistanceCalibrated.mean",
-                       measure_intensityOnDetection = "orgaDetectionPeak.mean",
+                       orga_intensityOnDetection = "orgaDetectionPeak.mean",
                        orga_intensityOnDetection_backsub = "orgaDetectionPeakBacksub.mean",
+                       measure_intensityOnDetection = "measureDetectionPeak.mean",
                        measure_intensityOnDetection_backsub = "measureDetectionPeakBacksub.mean",
                        orga_meanDistance_nucleus_normalized = "detectionDistanceNormalized.mean")
       

@@ -62,9 +62,11 @@ process_orga_measurements <- function(cell_data,
                                       check_measureChannelCell,
                                       check_measureChannelOrganelle) {
   
+  # Now includeds the cells with 0 detection
   merge <- merge(cell_data,
                  orga_data,
-                 by = c("identifier", "series", "cell"))
+                 by = c("identifier", "series", "cell"),
+                 all.x = TRUE)
   
   # background subtraction for detection intensity
   merge$orgaDetectionPeakBacksub <- merge$orgaDetectionPeak - merge$orgaMeanBackground
